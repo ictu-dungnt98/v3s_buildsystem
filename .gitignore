@@ -1,7 +1,8 @@
-./Lichee-Pi-u-boot/
-./Lichee-Pi-linux/
-./buildroot-2021.02.3/
-./sunxi-tools/
-./output/
+Lichee-Pi-u-boot/
+Lichee-Pi-linux/
+buildroot-2021.02.3/
+sunxi-tools/
+output/
+toolchain/
 *.log
 
