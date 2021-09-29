@@ -3,7 +3,7 @@
 echo "Lichee pi Zero (V3S)"
 echo "Welcome to use lichee pi nano sdk"
 toolchain_dir="toolchain"
-cross_compiler="arm-linux-gnueabi"
+cross_compiler="arm-linux-gnueabihf"
 temp_root_dir=$PWD
 
 
@@ -61,9 +61,9 @@ pull_toolchain(){
 	mkdir -p ${temp_root_dir}/${toolchain_dir}
 	cd ${temp_root_dir}/${toolchain_dir}
 	ldconfig
-    wget https://releases.linaro.org/components/toolchain/binaries/7.4-2019.02/arm-linux-gnueabi/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi.tar.xz &&\
-    tar xvJf gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi.tar.xz
-    if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi ]; then
+    wget https://releases.linaro.org/components/toolchain/binaries/latest-7/arm-linux-gnueabihf/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf.tar.xz &&\
+    tar xvJf gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf.tar.xz
+    if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf ]; then
         echo "Error:pull toolchain failed"
             exit 0
     else			
@@ -108,14 +108,28 @@ pull_all(){
 }
 #pull===================================================================
 
+#clean===================================================================
+clean_log(){
+	rm -f ${temp_root_dir}/*.log
+}
+
+clean_all(){
+	clean_log
+	clean_uboot
+	clean_linux
+	clean_buildroot
+}
+#clean===================================================================
+
+
 #env===================================================================
 update_env(){
 	if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-i686_arm-linux-gnueabi ]; then
-		if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi ]; then
+		if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf ]; then
 			echo "Error:toolchain no found,Please use ./buid.sh pull_all "
 	    		exit 0
 		else			
-			export PATH="$PWD/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabi/bin":"$PATH"
+			export PATH="$PWD/${toolchain_dir}/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin":"$PATH"
 		fi
 	else
 		export PATH="$PWD/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-i686_arm-linux-gnueabi/bin":"$PATH"
@@ -218,7 +232,91 @@ build_linux(){
 }
 #linux=========================================================
 
-if [ ! -f ${temp_root_dir}/build.sh ]; then
+#buildroot=========================================================
+
+clean_buildroot(){
+	cd ${temp_root_dir}/${buildroot_dir}
+	make ARCH=arm CROSS_COMPILE=${cross_compiler}- clean > /dev/null 2>&1
+}
+
+
+build_buildroot(){
+	cd ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3
+	echo "Building buildroot ..."
+    	echo "--->Configuring ..."
+	rm ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/.config
+	cp -f ${temp_root_dir}/buildroot.config ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/configs/licheepi_zero_defconfig
+	make licheepi_zero_defconfig
+	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/.config ]; then
+		echo "Error: .config file not exist"
+		exit 1
+	fi
+	echo "--->Compiling ..."
+  	make -j8 > ${temp_root_dir}/build_buildroot.log 2>&1
+
+	if [ $? -ne 0 ] || [ ! -d ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/output/target ]; then
+        	echo "Error: BUILDROOT NOT BUILD.Please Get Some Error From build_buildroot.log"
+        	exit 1
+	fi
+	echo "Build buildroot ok"
+}
+#buildroot=========================================================
+
+#copy=========================================================
+copy_uboot(){
+	cp ${temp_root_dir}/${u_boot_dir}/u-boot-sunxi-with-spl.bin ${temp_root_dir}/output/
+}
+copy_linux(){
+	cp ${temp_root_dir}/${linux_dir}/arch/arm/boot/zImage ${temp_root_dir}/output/
+	cp ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/sun8i-v3s-licheepi-zero.dtb ${temp_root_dir}/output/
+	mkdir -p ${temp_root_dir}/output/modules/
+	cp -rf ${temp_root_dir}/${linux_dir}/out/lib ${temp_root_dir}/output/modules/
+}
+copy_buildroot(){
+	cp -r ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/output/target ${temp_root_dir}/output/rootfs/
+	cp ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/output/images/rootfs.tar ${temp_root_dir}/output/
+	gzip -c ${temp_root_dir}/output/rootfs.tar > ${temp_root_dir}/output/rootfs.tar.gz
+}
+#copy=========================================================
+
+#clean output dir=========================================================
+clean_output_dir(){
+	rm -rf ${temp_root_dir}/output/*
+}
+#clean output dir=========================================================
+
+build(){
+	check_env
+	update_env
+	echo "clean log ..."
+	clean_log
+	echo "clean output dir ..."
+	clean_output_dir
+	build_uboot
+	echo "copy uboot ..."
+	copy_uboot
+	build_linux
+	echo "copy linux ..."
+	copy_linux
+	# build_buildroot
+	# echo "copy buildroot ..."
+	# copy_buildroot
+}
+
+if [ "${1}" = "" ] && [ ! "${1}" = "zero_spiflash" ] && [ ! "${1}" = "zero_tf" ] && [ ! "${1}" = "build" ] && [ ! "${1}" = "pull_all" ]; then
+	echo "Usage: script.sh [zero_spiflash | zero_tf | pull_all | clean]"；
+	echo "One key build nano finware";
+	echo " ";
+	echo "zero_spiflash    Build zero firmware booted from spiflash";
+	echo "zero_tf          Build zero firmware booted from tf";
+	echo "pull_all         Pull build env from internet";
+	echo "pack             Pack all file for norflash rom (not rebuild)";
+	echo "clean            Clean build env";
+	echo "build            Build all";
+    exit 0
+fi
+
+if [ ! -f ${temp_root_dir}/script.sh ]; then
 	echo "Error:Please enter packge root dir"
     	exit 0
 fi
@@ -245,6 +343,7 @@ if [ "${1}" = "build_uboot" ]; then
 fi
 
 if [ "${1}" = "build_linux" ]; then
+	linux_config_file="licheepi_zero_defconfig"
 	build_linux
 fi
 
@@ -252,6 +351,11 @@ if [ "${1}" = "build_buildroot" ]; then
 	build_buildroot
 fi
 
+if [ "${1}" = "build" ]; then
+	linux_config_file="licheepi_zero_defconfig"
+	u_boot_config_file="LicheePi_Zero_defconfig"
+	build
+fi
 
 sleep 1
 echo "Done!"
