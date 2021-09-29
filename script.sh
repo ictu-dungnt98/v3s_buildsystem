@@ -245,8 +245,8 @@ build_buildroot(){
 	echo "Building buildroot ..."
     	echo "--->Configuring ..."
 	rm ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/.config
-	cp -f ${temp_root_dir}/buildroot.config ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/configs/licheepi_zero_defconfig
-	make licheepi_zero_defconfig
+	# cp -f ${temp_root_dir}/buildroot.config ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/configs/licheepi_zero_defconfig
+	make ${buildroot_config_file}
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/.config ]; then
 		echo "Error: .config file not exist"
 		exit 1
@@ -298,12 +298,12 @@ build(){
 	build_linux
 	echo "copy linux ..."
 	copy_linux
-	# build_buildroot
-	# echo "copy buildroot ..."
-	# copy_buildroot
+	build_buildroot
+	echo "copy buildroot ..."
+	copy_buildroot
 }
 
-if [ "${1}" = "" ] && [ ! "${1}" = "zero_spiflash" ] && [ ! "${1}" = "zero_tf" ] && [ ! "${1}" = "build" ] && [ ! "${1}" = "pull_all" ]; then
+if [ "${1}" = "" ] && [ ! "${1}" = "zero_spiflash" ] && [ ! "${1}" = "zero_tf" ] && [ ! "${1}" = "build_all" ] && [ ! "${1}" = "pull_all" ]; then
 	echo "Usage: script.sh [zero_spiflash | zero_tf | pull_all | clean]"；
 	echo "One key build nano finware";
 	echo " ";
@@ -351,9 +351,10 @@ if [ "${1}" = "build_buildroot" ]; then
 	build_buildroot
 fi
 
-if [ "${1}" = "build" ]; then
+if [ "${1}" = "build_all" ]; then
 	linux_config_file="licheepi_zero_defconfig"
 	u_boot_config_file="LicheePi_Zero_defconfig"
+	buildroot_config_file="v3s_defconfig"
 	build
 fi
 
