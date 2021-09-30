@@ -303,6 +303,121 @@ build(){
 	copy_buildroot
 }
 
+
+#pack_tf_image==========================================================
+pack_tf_normal_size_img(){
+	_ROOTFS_FILE=${temp_root_dir}/output/rootfs.tar.gz
+	_ROOTFS_SIZE=`gzip -l $_ROOTFS_FILE | sed -n '2p' | awk '{print $2}'`
+	_ROOTFS_SIZE=`echo "scale=3;$_ROOTFS_SIZE/1024/1024" | bc`
+
+	_UBOOT_SIZE=1
+	_CFG_SIZEKB=0
+	_P1_SIZE=16
+	_IMG_SIZE=200
+	_kernel_mod_dir_name=$(ls ${temp_root_dir}/output/modules/lib/modules/)
+	_MOD_FILE=${temp_root_dir}/output/modules/lib/modules/${_kernel_mod_dir_name}
+	_MOD_SIZE=`du $_MOD_FILE --max-depth=0 | cut -f 1`
+	_MOD_SIZE=`echo "scale=3;$_MOD_SIZE/1024" | bc`
+	_MIN_SIZE=`echo "scale=3;$_UBOOT_SIZE+$_P1_SIZE+$_ROOTFS_SIZE+$_MOD_SIZE+$_CFG_SIZEKB/1024" | bc` #+$_OVERLAY_SIZE
+	_MIN_SIZE=$(echo "$_MIN_SIZE" | bc)
+	echo  "--->min img size = $_MIN_SIZE MB"
+	_MIN_SIZE=$(echo "${_MIN_SIZE%.*}+1"|bc)
+
+	_FREE_SIZE=`echo "$_IMG_SIZE-$_MIN_SIZE"|bc`
+	_IMG_FILE=${temp_root_dir}/output/image/lichee-zero-normal-size.img
+	mkdir -p ${temp_root_dir}/output/image
+	rm $_IMG_FILE
+	dd if=/dev/zero of=$_IMG_FILE bs=1M count=$_IMG_SIZE
+	if [ $? -ne 0 ]
+	then
+		echo  "getting error in creating dd img!"
+	    	exit
+	fi
+	_LOOP_DEV=$(sudo losetup -f)
+	if [ -z $_LOOP_DEV ]
+	then
+		echo  "can not find a loop device!"
+		exit
+	fi
+	sudo losetup $_LOOP_DEV $_IMG_FILE
+	if [ $? -ne 0 ]
+	then
+		echo  "dd img --> $_LOOP_DEV error!"
+		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1 && exit
+	fi
+	echo  "--->creating partitions for tf image ..."
+	#blockdev --rereadpt $_LOOP_DEV >/dev/null 2>&1
+	# size only can be integer
+	cat <<EOT |sudo  sfdisk $_IMG_FILE
+${_UBOOT_SIZE}M,${_P1_SIZE}M,c
+,,L
+EOT
+
+	sleep 2
+	sudo partx -u $_LOOP_DEV
+	sudo mkfs.vfat ${_LOOP_DEV}p1 ||exit
+	sudo mkfs.ext4 ${_LOOP_DEV}p2 ||exit
+	if [ $? -ne 0 ]
+	then
+		echo  "error in creating partitions"
+		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1 && exit
+		#sudo partprobe $_LOOP_DEV >/dev/null 2>&1 && exit
+	fi
+
+	#pack uboot
+	echo  "--->writing u-boot-sunxi-with-spl to $_LOOP_DEV"
+	# sudo dd if=/dev/zero of=$_LOOP_DEV bs=1K seek=1 count=1023  # clear except mbr
+	_UBOOT_FILE=${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
+	sudo dd if=$_UBOOT_FILE of=$_LOOP_DEV bs=1024 seek=8
+	if [ $? -ne 0 ]
+	then
+		echo  "writing u-boot error!"
+		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1 && exit
+		#sudo partprobe $_LOOP_DEV >/dev/null 2>&1 && exit
+	fi
+
+	sudo sync
+	mkdir -p ${temp_root_dir}/output/p1 >/dev/null 2>&1
+	mkdir -p ${temp_root_dir}/output/p2 > /dev/null 2>&1
+	sudo mount ${_LOOP_DEV}p1 ${temp_root_dir}/output/p1
+	sudo mount ${_LOOP_DEV}p2 ${temp_root_dir}/output/p2
+	echo  "--->copy boot and rootfs files..."
+	sudo rm -rf  ${temp_root_dir}/output/p1/* && sudo rm -rf ${temp_root_dir}/output/p2/*
+
+	#pack linux kernel
+	_KERNEL_FILE=${temp_root_dir}/output/zImage
+	_DTB_FILE=${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
+	sudo cp $_KERNEL_FILE ${temp_root_dir}/output/p1/zImage &&\
+        sudo cp $_DTB_FILE ${temp_root_dir}/output/p1/ &&\
+        sudo cp ${temp_root_dir}/output/boot.scr ${temp_root_dir}/output/p1/ &&\
+        echo "--->p1 done~"
+        sudo tar xzvf $_ROOTFS_FILE -C ${temp_root_dir}/output/p2/ &&\
+        echo "--->p2 done~"
+        # sudo cp -r $_OVERLAY_BASE/*  p2/ &&\
+        # sudo cp -r $_OVERLAY_FILE/*  p2/ &&\
+        sudo mkdir -p ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
+        sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/
+        echo "--->modules done~"
+
+        if [ $? -ne 0 ]
+        then
+		echo "copy files error! "
+		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1
+		sudo umount ${_LOOP_DEV}p1  ${_LOOP_DEV}p2 >/dev/null 2>&1
+		exit
+        fi
+        echo "--->The tf card image-packing task done~"
+	sudo sync
+	sleep 2
+	sudo umount ${temp_root_dir}/output/p1 ${temp_root_dir}/output/p2  && sudo losetup -d $_LOOP_DEV
+	if [ $? -ne 0 ]
+	then
+		echo  "umount or losetup -d error!!"
+		exit
+	fi
+}
+#pack=========================================================
+
 if [ "${1}" = "" ] && [ ! "${1}" = "zero_spiflash" ] && [ ! "${1}" = "zero_tf" ] && [ ! "${1}" = "build_all" ] && [ ! "${1}" = "pull_all" ]; then
 	echo "Usage: script.sh [zero_spiflash | zero_tf | pull_all | clean]"；
 	echo "One key build nano finware";
@@ -356,6 +471,7 @@ if [ "${1}" = "build_all" ]; then
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	buildroot_config_file="v3s_defconfig"
 	build
+	pack_tf_normal_size_img
 fi
 
 sleep 1
