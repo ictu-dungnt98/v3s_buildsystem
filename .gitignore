@@ -1,6 +1,6 @@
 Lichee-Pi-u-boot/
 Lichee-Pi-linux/
-buildroot-2021.02.3/
+buildroot/
 sunxi-tools/
 output/
 toolchain/

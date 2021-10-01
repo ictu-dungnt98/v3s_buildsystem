@@ -19,7 +19,7 @@ linux_config_file=""
 #linux opt=========================================================
 
 #linux opt=========================================================
-buildroot_dir="buildroot-2021.02.3"
+buildroot_dir="buildroot"
 buildroot_config_file=""
 #linux opt=========================================================
 
@@ -33,9 +33,9 @@ pull_uboot(){
 	if [ ! -d ${temp_root_dir}/${u_boot_dir}/u-boot ]; then
 		echo "Error:pull u_boot failed"
     		exit 0
-	else	
-		mv ${temp_root_dir}/${u_boot_dir}/u-boot/* ${temp_root_dir}/${u_boot_dir}/	
-		rm -rf ${temp_root_dir}/${u_boot_dir}/u-boot	
+	else
+		mv ${temp_root_dir}/${u_boot_dir}/u-boot/* ${temp_root_dir}/${u_boot_dir}/
+		rm -rf ${temp_root_dir}/${u_boot_dir}/u-boot
 		echo "pull u-boot ok"
 	fi
 }
@@ -44,12 +44,13 @@ pull_linux(){
 	rm -rf ${temp_root_dir}/${linux_dir} &&\
 	mkdir -p ${temp_root_dir}/${linux_dir} &&\
 	cd ${temp_root_dir}/${linux_dir} &&\
-	git clone -b zero-5.2.y https://github.com/Lichee-Pi/linux.git linux
-	
+	#git clone -b zero-5.2.y https://github.com/Lichee-Pi/linux.git linux
+    git clone -b zero-4.13.y https://github.com/Lichee-Pi/linux.git linux
+
 	if [ ! -d ${temp_root_dir}/${linux_dir}/linux ]; then
 		echo "Error:pull linux failed"
     		exit 0
-	else	
+	else
 		mv ${temp_root_dir}/${linux_dir}/linux/* ${temp_root_dir}/${linux_dir}/
 		rm -rf ${temp_root_dir}/${linux_dir}/linux
 		echo "pull linux ok"
@@ -66,7 +67,7 @@ pull_toolchain(){
     if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf ]; then
         echo "Error:pull toolchain failed"
             exit 0
-    else			
+    else
         echo "pull toolchain ok"
     fi
 }
@@ -75,11 +76,13 @@ pull_buildroot(){
 	rm -rf ${temp_root_dir}/${buildroot_dir}
 	mkdir -p ${temp_root_dir}/${buildroot_dir}
 	cd ${temp_root_dir}/${buildroot_dir}  &&\
-	wget https://buildroot.org/downloads/buildroot-2021.02.3.tar.gz && tar xvf buildroot-2021.02.3.tar.gz
-	if [ ! -d ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3 ]; then
+	#wget https://buildroot.org/downloads/buildroot-2017.08.tar.gz && tar -xvf buildroot-2017.08.tar.gz
+    git clone https://github.com/Unturned3/v3s_buildroot.git buildroot
+
+    if [ ! -d ${temp_root_dir}/${buildroot_dir} ]; then
 		echo "Error:pull buildroot failed"
     	exit 0
-	else			
+	else
 		# mv ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/* ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3
 		# rm -rf ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3
 		echo "pull buildroot ok"
@@ -88,7 +91,7 @@ pull_buildroot(){
 
 pull_all(){
     sudo apt-get update
-	sudo apt-get install -y autoconf automake libtool gettext 
+	sudo apt-get install -y autoconf automake libtool gettext
     sudo apt-get install -y make gcc g++ swig python-dev bc python u-boot-tools bison flex bc libssl-dev libncurses5-dev unzip mtd-utils
 	sudo apt-get install -y libc6-i386 lib32stdc++6 lib32z1
 	sudo apt-get install -y libc6:i386 libstdc++6:i386 zlib1g:i386
@@ -128,13 +131,13 @@ update_env(){
 		if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf ]; then
 			echo "Error:toolchain no found,Please use ./buid.sh pull_all "
 	    		exit 0
-		else			
+		else
 			export PATH="$PWD/${toolchain_dir}/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin":"$PATH"
 		fi
 	else
 		export PATH="$PWD/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-i686_arm-linux-gnueabi/bin":"$PATH"
 	fi
-	
+
 }
 check_env(){
 	if [ ! -d ${temp_root_dir}/${toolchain_dir} ] ||\
@@ -227,7 +230,7 @@ build_linux(){
 	#build linux kernel modules
 	make ARCH=arm CROSS_COMPILE=${cross_compiler}- -j${proc_processor} INSTALL_MOD_PATH=${temp_root_dir}/${linux_dir}/out modules > /dev/null 2>&1
 	make ARCH=arm CROSS_COMPILE=${cross_compiler}- -j${proc_processor} INSTALL_MOD_PATH=${temp_root_dir}/${linux_dir}/out modules_install > /dev/null 2>&1
-	
+
 	echo "Build linux ok"
 }
 #linux=========================================================
@@ -241,20 +244,22 @@ clean_buildroot(){
 
 
 build_buildroot(){
-	cd ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3
+	cd ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}
 	echo "Building buildroot ..."
     	echo "--->Configuring ..."
-	rm ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/.config
-	# cp -f ${temp_root_dir}/buildroot.config ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/configs/licheepi_zero_defconfig
+	rm ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/.config
 	make ${buildroot_config_file}
-	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/.config ]; then
+	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/.config ]; then
 		echo "Error: .config file not exist"
 		exit 1
 	fi
-	echo "--->Compiling ..."
-  	make -j8 > ${temp_root_dir}/build_buildroot.log 2>&1
 
-	if [ $? -ne 0 ] || [ ! -d ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/output/target ]; then
+    echo "--->Get cpu info ..."
+    proc_processor=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
+	echo "--->Compiling ..."
+  	make -j${proc_processor} > ${temp_root_dir}/build_buildroot.log 2>&1
+
+	if [ $? -ne 0 ] || [ ! -d ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/target ]; then
         	echo "Error: BUILDROOT NOT BUILD.Please Get Some Error From build_buildroot.log"
         	exit 1
 	fi
@@ -273,8 +278,8 @@ copy_linux(){
 	cp -rf ${temp_root_dir}/${linux_dir}/out/lib ${temp_root_dir}/output/modules/
 }
 copy_buildroot(){
-	cp -r ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/output/target ${temp_root_dir}/output/rootfs/
-	cp ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/output/images/rootfs.tar ${temp_root_dir}/output/
+	cp -r ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/target ${temp_root_dir}/output/rootfs/
+	cp ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs.tar ${temp_root_dir}/output/
 	gzip -c ${temp_root_dir}/output/rootfs.tar > ${temp_root_dir}/output/rootfs.tar.gz
 }
 #copy=========================================================
@@ -452,6 +457,14 @@ if [ "${1}" = "pull_all" ]; then
 	pull_all
 fi
 
+if [ "${1}" = "pull_linux" ]; then
+    pull_linux
+fi
+
+if [ "${1}" = "pull_buildroot" ]; then
+    pull_buildroot
+fi
+
 if [ "${1}" = "build_uboot" ]; then
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	build_uboot
@@ -463,13 +476,18 @@ if [ "${1}" = "build_linux" ]; then
 fi
 
 if [ "${1}" = "build_buildroot" ]; then
+    buildroot_config_file="licheepi_zero_defconfig"
 	build_buildroot
+fi
+
+if [ "${1}" = "tf_pack" ]; then
+    pack_tf_normal_size_img
 fi
 
 if [ "${1}" = "build_all" ]; then
 	linux_config_file="licheepi_zero_defconfig"
 	u_boot_config_file="LicheePi_Zero_defconfig"
-	buildroot_config_file="v3s_defconfig"
+	buildroot_config_file="licheepi_zero_defconfig"
 	build
 	pack_tf_normal_size_img
 fi
