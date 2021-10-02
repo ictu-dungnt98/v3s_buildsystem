@@ -10,7 +10,7 @@ temp_root_dir=$PWD
 #uboot=========================================================
 u_boot_dir="Lichee-Pi-u-boot"
 u_boot_config_file=""
-u_boot_boot_cmd_file=""
+u_boot_boot_cmd_file="boot.cmd"
 #uboot=========================================================
 
 #linux opt=========================================================
@@ -187,6 +187,7 @@ build_uboot(){
 	fi
 	#make boot.src
 	if [ -n "$u_boot_boot_cmd_file" ];then
+        echo "build uboot.src"
 		mkimage -A arm -O linux -T script -C none -a 0 -e 0 -n "Beagleboard boot script" -d ${temp_root_dir}/${u_boot_boot_cmd_file} ${temp_root_dir}/output/boot.scr
 	fi
 	echo "Build uboot ok"
@@ -308,8 +309,6 @@ build(){
 	copy_buildroot
 }
 
-
-#pack_tf_image==========================================================
 pack_tf_normal_size_img(){
 	_ROOTFS_FILE=${temp_root_dir}/output/rootfs.tar.gz
 	_ROOTFS_SIZE=`gzip -l $_ROOTFS_FILE | sed -n '2p' | awk '{print $2}'`
@@ -392,14 +391,13 @@ EOT
 	#pack linux kernel
 	_KERNEL_FILE=${temp_root_dir}/output/zImage
 	_DTB_FILE=${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
-	sudo cp $_KERNEL_FILE ${temp_root_dir}/output/p1/zImage &&\
+	sudo cp $_UBOOT_FILE ${temp_root_dir}/output/p1/u-boot-sunxi-with-spl.bin &&\
+        sudo cp $_KERNEL_FILE ${temp_root_dir}/output/p1/zImage &&\
         sudo cp $_DTB_FILE ${temp_root_dir}/output/p1/ &&\
         sudo cp ${temp_root_dir}/output/boot.scr ${temp_root_dir}/output/p1/ &&\
         echo "--->p1 done~"
         sudo tar xzvf $_ROOTFS_FILE -C ${temp_root_dir}/output/p2/ &&\
         echo "--->p2 done~"
-        # sudo cp -r $_OVERLAY_BASE/*  p2/ &&\
-        # sudo cp -r $_OVERLAY_FILE/*  p2/ &&\
         sudo mkdir -p ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
         sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/
         echo "--->modules done~"
@@ -448,7 +446,8 @@ if [ "${1}" = "update_env" ]; then
 fi
 
 if [ "${1}" = "clean" ]; then
-	clean_all
+	#clean_all
+    clean_output_dir
 	echo "clean ok"
 	exit 0
 fi
