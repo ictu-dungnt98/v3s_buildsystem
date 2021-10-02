@@ -100,7 +100,7 @@ pull_all(){
 	pull_toolchain
 	pull_buildroot
     #copy file config
-	# cp -f ${temp_root_dir}/buildroot.config ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/
+	# cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 	# cp -f ${temp_root_dir}/linux-licheepi_nano_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_nano_defconfig
 	# cp -f ${temp_root_dir}/linux-licheepi_nano_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_nano_spiflash_defconfig
 	# cp -f ${temp_root_dir}/suniv-f1c100s-licheepi-nano.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/suniv-f1c100s-licheepi-nano.dts
@@ -249,6 +249,7 @@ build_buildroot(){
 	echo "Building buildroot ..."
     	echo "--->Configuring ..."
 	rm ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/.config
+	cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/${buildroot_config_file}
 	make ${buildroot_config_file}
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/.config ]; then
 		echo "Error: .config file not exist"
@@ -396,10 +397,11 @@ EOT
         sudo cp $_DTB_FILE ${temp_root_dir}/output/p1/ &&\
         sudo cp ${temp_root_dir}/output/boot.scr ${temp_root_dir}/output/p1/ &&\
         echo "--->p1 done~"
-        sudo tar xzvf $_ROOTFS_FILE -C ${temp_root_dir}/output/p2/ &&\
+        sudo tar xzvf $_ROOTFS_FILE -C ${temp_root_dir}/output/p2/ > /dev/null 2>&1  &&\
         echo "--->p2 done~"
         sudo mkdir -p ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
-        sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/
+        sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
+        sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/p2/etc/network/interfaces
         echo "--->modules done~"
 
         if [ $? -ne 0 ]
@@ -446,7 +448,7 @@ if [ "${1}" = "update_env" ]; then
 fi
 
 if [ "${1}" = "clean" ]; then
-	#clean_all
+	clean_all
     clean_output_dir
 	echo "clean ok"
 	exit 0
