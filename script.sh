@@ -98,15 +98,6 @@ pull_all(){
 	pull_linux
 	pull_toolchain
 	pull_buildroot
-    #copy file config
-	# cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
-	# cp -f ${temp_root_dir}/linux-licheepi_nano_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_nano_defconfig
-	# cp -f ${temp_root_dir}/linux-licheepi_nano_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_nano_spiflash_defconfig
-	# cp -f ${temp_root_dir}/suniv-f1c100s-licheepi-nano.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/suniv-f1c100s-licheepi-nano.dts
-	# cp -f ${temp_root_dir}/uboot-licheepi_nano_defconfig ${temp_root_dir}/${u_boot_dir}/configs/licheepi_nano_defconfig
-	# cp -f ${temp_root_dir}/uboot-licheepi_nano_spiflash_defconfig ${temp_root_dir}/${u_boot_dir}/configs/licheepi_nano_spiflash_defconfig
-	#create output folder
-    mkdir -p ${temp_root_dir}/output
 }
 #pull===================================================================
 
@@ -215,10 +206,6 @@ build_linux(){
 
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${linux_dir}/arch/arm/boot/zImage ]; then
         	echo "Error: LINUX NOT BUILD. Please Get Some Error From build_linux.log"
-			#error_msg=$(cat ${temp_root_dir}/build_linux.log)
-			#if [[ $(echo $error_msg | grep "ImportError: No module named _libfdt") != "" ]];then
-			#    echo "Please use Python2.7 as default python interpreter"
-			#fi
         	exit 1
 	fi
 
@@ -236,12 +223,10 @@ build_linux(){
 #linux=========================================================
 
 #buildroot=========================================================
-
 clean_buildroot(){
 	cd ${temp_root_dir}/${buildroot_dir}
 	make ARCH=arm CROSS_COMPILE=${cross_compiler}- clean > /dev/null 2>&1
 }
-
 
 build_buildroot(){
 	cd ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}
@@ -286,7 +271,7 @@ copy_buildroot(){
 
 #clean output dir=========================================================
 clean_output_dir(){
-	rm -rf ${temp_root_dir}/output/*
+	sudo rm -rf ${temp_root_dir}/output/*
 }
 #clean output dir=========================================================
 
@@ -315,26 +300,26 @@ pack_spiflash_normal_size_img(){
     cd ${temp_root_dir}
 
     #rootfs
-	sudo rm -rf ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/rootfs && sudo mkdir -p ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs
-	sudo tar -C ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs -xvf ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs.tar
-	sudo chown root ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs/bin/* -R
-	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs/etc/network/interfaces
-    sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs -o ./output/jffs2.img
+	sudo rm -rf ${temp_root_dir}/output/rootfs && mkdir -p ${temp_root_dir}/output/rootfs
+	tar -C ${temp_root_dir}/output/rootfs -xvf ${temp_root_dir}/output/rootfs.tar
+	sudo chown root ${temp_root_dir}/output/rootfs/bin/* -R
+	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces
+    sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs -o ./output/jffs2.img
 
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
     UBOOT_FILE=${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	KERNEL_FILE=${temp_root_dir}/output/zImage
 	DTB_FILE=${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
+	KERNEL_FILE=${temp_root_dir}/output/zImage
     ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
 
     dd if=/dev/zero of=$OUT_FILENAME bs=1M count=16 #flash 16M
     dd if=$UBOOT_FILE of=$OUT_FILENAME bs=1K conv=notrunc
     dd if=$DTB_FILE of=$OUT_FILENAME bs=1K seek=1024  conv=notrunc
     dd if=$KERNEL_FILE of=$OUT_FILENAME bs=1K seek=1088  conv=notrunc
-    dd if=${ROOTFS_FILE} of=$OUT_FILENAME bs=1M seek=5184 conv=notrunc
+    dd if=${ROOTFS_FILE} of=$OUT_FILENAME bs=1K seek=5184 conv=notrunc
 
 	echo "done"
-    # rm -rf ${temp_root_dir}/output/rootfs ${temp_root_dir}/output/jffs2.img
+    #rm -rf ${temp_root_dir}/output/rootfs ${temp_root_dir}/output/jffs2.img
 }
 
 pack_tf_normal_size_img(){
