@@ -72,7 +72,7 @@ pull_toolchain(){
 }
 
 pull_buildroot(){
-	rm -rf ${temp_root_dir}/${buildroot_dir}
+	sudo rm -rf ${temp_root_dir}/${buildroot_dir}
 	mkdir -p ${temp_root_dir}/${buildroot_dir}
 	cd ${temp_root_dir}/${buildroot_dir}  &&\
 	#wget https://buildroot.org/downloads/buildroot-2017.08.tar.gz && tar -xvf buildroot-2017.08.tar.gz
@@ -304,7 +304,7 @@ pack_spiflash_normal_size_img(){
 	tar -C ${temp_root_dir}/output/rootfs -xvf ${temp_root_dir}/output/rootfs.tar
 	sudo chown root ${temp_root_dir}/output/rootfs/bin/* -R
 	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces
-    sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs -o ./output/jffs2.img
+    sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
 
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
     UBOOT_FILE=${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
@@ -312,11 +312,11 @@ pack_spiflash_normal_size_img(){
 	KERNEL_FILE=${temp_root_dir}/output/zImage
     ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
 
-    dd if=/dev/zero of=$OUT_FILENAME bs=1M count=16 #flash 16M
-    dd if=$UBOOT_FILE of=$OUT_FILENAME bs=1K conv=notrunc
-    dd if=$DTB_FILE of=$OUT_FILENAME bs=1K seek=1024  conv=notrunc
-    dd if=$KERNEL_FILE of=$OUT_FILENAME bs=1K seek=1088  conv=notrunc
-    dd if=${ROOTFS_FILE} of=$OUT_FILENAME bs=1K seek=5184 conv=notrunc
+    dd if=/dev/zero 	of=$OUT_FILENAME bs=1M count=16 #flash 16M
+    dd if=$UBOOT_FILE 	of=$OUT_FILENAME bs=1K conv=notrunc 
+    dd if=$DTB_FILE 	of=$OUT_FILENAME bs=1K seek=1024  conv=notrunc
+	dd if=$KERNEL_FILE 	of=$OUT_FILENAME bs=1K seek=1088  conv=notrunc
+    dd if=$ROOTFS_FILE 	of=$OUT_FILENAME bs=1K seek=5184 conv=notrunc
 
 	echo "done"
     #rm -rf ${temp_root_dir}/output/rootfs ${temp_root_dir}/output/jffs2.img
@@ -508,8 +508,10 @@ if [ "${1}" = "pack_flash" ]; then
 fi
 
 if [ "${1}" = "build_flash" ]; then
-    cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
-	cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
+	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig \
+		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
+    # cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
+	# cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	linux_config_file="licheepi_zero_spiflash_defconfig"
 	u_boot_config_file="LicheePi_Zero_defconfig"
@@ -521,8 +523,11 @@ if [ "${1}" = "build_flash" ]; then
 fi
 
 if [ "${1}" = "burn_flash" ]; then
-	# sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/erase_flash.bin
-	# sleep 2
+	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
+	# sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
+	# sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
+	# sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
+
 	sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/output/flashimg.bin
 fi
 
