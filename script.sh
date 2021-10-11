@@ -11,15 +11,14 @@ temp_root_dir=$PWD
 u_boot_dir="Lichee-Pi-u-boot"
 u_boot_config_file=""
 u_boot_boot_cmd_file="boot.cmd"
-
-uboot_file"u-boot-sunxi-with-spl.bin"
+uboot_file=""
 #uboot=========================================================
 
 #linux opt=========================================================
 linux_dir="Lichee-Pi-linux"
 linux_config_file=""
 # dtb_file="sun8i-v3s-licheepi-zero.dtb"
-dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
+dtb_file=""
 #linux opt=========================================================
 
 #linux opt=========================================================
@@ -267,7 +266,7 @@ copy_linux(){
 	cp -rf ${temp_root_dir}/${linux_dir}/out/lib ${temp_root_dir}/output/modules/
 }
 copy_buildroot(){
-	cp -r ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/target ${temp_root_dir}/output/rootfs/
+	cp -r ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/target ${temp_root_dir}/output/rootfs/ > /dev/null 2>&1
 	cp ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs.tar ${temp_root_dir}/output/
 	gzip -c ${temp_root_dir}/output/rootfs.tar > ${temp_root_dir}/output/rootfs.tar.gz
 }
@@ -305,13 +304,18 @@ pack_spiflash_normal_size_img(){
 
     #rootfs
 	sudo rm -rf ${temp_root_dir}/output/rootfs && mkdir -p ${temp_root_dir}/output/rootfs
-	tar -C ${temp_root_dir}/output/rootfs -xvf ${temp_root_dir}/output/rootfs.tar
+	tar -C ${temp_root_dir}/output/rootfs -xvf ${temp_root_dir}/output/rootfs.tar > /dev/null 2>&1
 	sudo chown root ${temp_root_dir}/output/rootfs/bin/* -R
 	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces
     sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
 
+
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
-    UBOOT_FILE=${temp_root_dir}/output/${uboot_file}
+    UBOOT_FILE=${temp_root_dir}/output/${uboot_file}	
+	
+	echo "uboot_file"
+	echo $UBOOT_FILE
+
 	DTB_FILE=${temp_root_dir}/output/${dtb_file}
 	KERNEL_FILE=${temp_root_dir}/output/zImage
     ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
@@ -521,6 +525,9 @@ if [ "${1}" = "build_flash" ]; then
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	linux_config_file="licheepi_zero_spiflash_defconfig"
     buildroot_config_file="licheepi_zero_defconfig"
+
+	uboot_file="u-boot-sunxi-with-spl.bin"
+	dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
 
 	build
 	pack_spiflash_normal_size_img
