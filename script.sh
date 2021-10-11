@@ -508,9 +508,9 @@ if [ "${1}" = "pack_flash" ]; then
 fi
 
 if [ "${1}" = "build_flash" ]; then
-	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig \
-		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
-    # cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
+	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
+	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
+    cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
 	# cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	linux_config_file="licheepi_zero_spiflash_defconfig"
