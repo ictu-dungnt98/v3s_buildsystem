@@ -11,11 +11,15 @@ temp_root_dir=$PWD
 u_boot_dir="Lichee-Pi-u-boot"
 u_boot_config_file=""
 u_boot_boot_cmd_file="boot.cmd"
+
+uboot_file"u-boot-sunxi-with-spl.bin"
 #uboot=========================================================
 
 #linux opt=========================================================
 linux_dir="Lichee-Pi-linux"
 linux_config_file=""
+# dtb_file="sun8i-v3s-licheepi-zero.dtb"
+dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
 #linux opt=========================================================
 
 #linux opt=========================================================
@@ -209,8 +213,8 @@ build_linux(){
         	exit 1
 	fi
 
-	if [ ! -f ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/sun8i-v3s-licheepi-zero.dtb ]; then
-        	echo "Error: Linux NOT BUILD. ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/sun8i-v3s-licheepi-zero.dtb not found"
+	if [ ! -f ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/${dtb_file} ]; then
+        	echo "Error: Linux NOT BUILD. ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/${dtb_file} not found"
         	exit 1
 	fi
 
@@ -258,7 +262,7 @@ copy_uboot(){
 }
 copy_linux(){
 	cp ${temp_root_dir}/${linux_dir}/arch/arm/boot/zImage ${temp_root_dir}/output/
-	cp ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/sun8i-v3s-licheepi-zero.dtb ${temp_root_dir}/output/
+	cp ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/${dtb_file} ${temp_root_dir}/output/
 	mkdir -p ${temp_root_dir}/output/modules/
 	cp -rf ${temp_root_dir}/${linux_dir}/out/lib ${temp_root_dir}/output/modules/
 }
@@ -307,8 +311,8 @@ pack_spiflash_normal_size_img(){
     sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
 
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
-    UBOOT_FILE=${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	DTB_FILE=${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
+    UBOOT_FILE=${temp_root_dir}/output/${uboot_file}
+	DTB_FILE=${temp_root_dir}/output/${dtb_file}
 	KERNEL_FILE=${temp_root_dir}/output/zImage
     ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
 
@@ -384,7 +388,7 @@ EOT
 	#pack uboot
 	echo  "--->writing u-boot-sunxi-with-spl to $_LOOP_DEV"
 	# sudo dd if=/dev/zero of=$_LOOP_DEV bs=1K seek=1 count=1023  # clear except mbr
-	_UBOOT_FILE=${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
+	_UBOOT_FILE=${temp_root_dir}/output/${uboot_file}
 	sudo dd if=$_UBOOT_FILE of=$_LOOP_DEV bs=1024 seek=8
 	if [ $? -ne 0 ]
 	then
@@ -403,8 +407,8 @@ EOT
 
 	#pack linux kernel
 	_KERNEL_FILE=${temp_root_dir}/output/zImage
-	_DTB_FILE=${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
-	sudo cp $_UBOOT_FILE ${temp_root_dir}/output/p1/u-boot-sunxi-with-spl.bin &&\
+	_DTB_FILE=${temp_root_dir}/output/${dtb_file}
+	sudo cp $_UBOOT_FILE ${temp_root_dir}/output/p1/${uboot_file} &&\
         sudo cp $_KERNEL_FILE ${temp_root_dir}/output/p1/zImage &&\
         sudo cp $_DTB_FILE ${temp_root_dir}/output/p1/ &&\
         sudo cp ${temp_root_dir}/output/boot.scr ${temp_root_dir}/output/p1/ &&\
@@ -513,9 +517,11 @@ if [ "${1}" = "build_flash" ]; then
     cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
 	# cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
-	linux_config_file="licheepi_zero_spiflash_defconfig"
+
 	u_boot_config_file="LicheePi_Zero_defconfig"
+	linux_config_file="licheepi_zero_spiflash_defconfig"
     buildroot_config_file="licheepi_zero_defconfig"
+
 	build
 	pack_spiflash_normal_size_img
 
@@ -524,7 +530,7 @@ fi
 
 if [ "${1}" = "burn_flash" ]; then
 	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	# sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/sun8i-v3s-licheepi-zero.dtb
+	# sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
 	# sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
 	# sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
 
