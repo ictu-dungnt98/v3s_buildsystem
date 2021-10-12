@@ -11,14 +11,14 @@ temp_root_dir=$PWD
 u_boot_dir="Lichee-Pi-u-boot"
 u_boot_config_file=""
 u_boot_boot_cmd_file="boot.cmd"
-uboot_file=""
+uboot_file="u-boot-sunxi-with-spl.bin"
 #uboot=========================================================
 
 #linux opt=========================================================
 linux_dir="Lichee-Pi-linux"
 linux_config_file=""
 # dtb_file="sun8i-v3s-licheepi-zero.dtb"
-dtb_file=""
+dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
 #linux opt=========================================================
 
 #linux opt=========================================================
@@ -312,11 +312,8 @@ pack_spiflash_normal_size_img(){
 
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
     UBOOT_FILE=${temp_root_dir}/output/${uboot_file}	
-	
-	echo "uboot_file"
-	echo $UBOOT_FILE
-
 	DTB_FILE=${temp_root_dir}/output/${dtb_file}
+
 	KERNEL_FILE=${temp_root_dir}/output/zImage
     ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
 
@@ -391,14 +388,12 @@ EOT
 
 	#pack uboot
 	echo  "--->writing u-boot-sunxi-with-spl to $_LOOP_DEV"
-	# sudo dd if=/dev/zero of=$_LOOP_DEV bs=1K seek=1 count=1023  # clear except mbr
 	_UBOOT_FILE=${temp_root_dir}/output/${uboot_file}
 	sudo dd if=$_UBOOT_FILE of=$_LOOP_DEV bs=1024 seek=8
 	if [ $? -ne 0 ]
 	then
 		echo  "writing u-boot error!"
 		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1 && exit
-		#sudo partprobe $_LOOP_DEV >/dev/null 2>&1 && exit
 	fi
 
 	sudo sync
@@ -504,9 +499,12 @@ if [ "${1}" = "tf_pack" ]; then
 fi
 
 if [ "${1}" = "build_tf" ]; then
+	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
+
 	linux_config_file="licheepi_zero_defconfig"
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	buildroot_config_file="licheepi_zero_defconfig"
+
 	build
 	pack_tf_normal_size_img
 fi
@@ -516,18 +514,20 @@ if [ "${1}" = "pack_flash" ]; then
 fi
 
 if [ "${1}" = "build_flash" ]; then
-	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
+	cp -f ${temp_root_dir}/sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
+	cp -f ${temp_root_dir}/spi-nor.c ${temp_root_dir}/${linux_dir}/drivers/mtd/spi-nor/spi-nor.c
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
-    cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
-	# cp -f ${temp_root_dir}/v3s_buildroot_defconfig ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
+	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig \	
+		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
+    cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig \
+		${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
+	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
+		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	linux_config_file="licheepi_zero_spiflash_defconfig"
     buildroot_config_file="licheepi_zero_defconfig"
-
-	uboot_file="u-boot-sunxi-with-spl.bin"
-	dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
 
 	build
 	pack_spiflash_normal_size_img
@@ -536,12 +536,13 @@ if [ "${1}" = "build_flash" ]; then
 fi
 
 if [ "${1}" = "burn_flash" ]; then
-	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	# sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
-	# sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
-	# sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
+	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
+	sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
+	sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
+	sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
+	sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
 
-	sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/output/flashimg.bin
+	# sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/output/flashimg.bin
 fi
 
 sleep 1
