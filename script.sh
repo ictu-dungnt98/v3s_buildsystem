@@ -499,7 +499,10 @@ if [ "${1}" = "tf_pack" ]; then
 fi
 
 if [ "${1}" = "build_tf" ]; then
+	cp -f ${temp_root_dir}/linux_tf_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
+	cp -f ${temp_root_dir}/v3s_buildroot_flash \
+		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	linux_config_file="licheepi_zero_defconfig"
 	u_boot_config_file="LicheePi_Zero_defconfig"
@@ -513,8 +516,12 @@ if [ "${1}" = "pack_flash" ]; then
         pack_spiflash_normal_size_img
 fi
 
+if [ "${1}" = "burn_tf" ]; then
+	sudo dd if=${temp_root_dir}/output/image/lichee-zero-normal-size.img of=/dev/sda bs=1M conv=notrunc
+fi
+
 if [ "${1}" = "build_flash" ]; then
-	cp -f ${temp_root_dir}/sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
+	cp -f ${temp_root_dir}/linux_flash_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
 	cp -f ${temp_root_dir}/spi-nor.c ${temp_root_dir}/${linux_dir}/drivers/mtd/spi-nor/spi-nor.c
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
 
@@ -522,7 +529,7 @@ if [ "${1}" = "build_flash" ]; then
 		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
     cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig \
 		${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
-	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
+	cp -f ${temp_root_dir}/v3s_buildroot_flash \
 		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	u_boot_config_file="LicheePi_Zero_defconfig"
