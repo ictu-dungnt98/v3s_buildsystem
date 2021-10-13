@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Start the network....
+#
+
+case "$1" in
+  start)
+    echo "Start hunonic audio " >> /root/test.txt
+    amixer -c 0 sset 'Headphone',0 100% unmute
+    aplay /root/file_example_WAV_1MG.wav &
+    ;;
+  stop)
+    echo -n "Stop hunonic audio service"
+    amixer -c 0 sset 'Headphone',0 100% mute
+    ;;
+  restart|reload)
+    "$0" stop
+    "$0" start
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart}"
+    exit 1
+esac
+
+exit $?

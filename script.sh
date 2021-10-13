@@ -299,7 +299,6 @@ build(){
 
 #pack=========================================================
 pack_spiflash_normal_size_img(){
-
     cd ${temp_root_dir}
 
     #rootfs
@@ -416,7 +415,12 @@ EOT
         echo "--->p2 done~"
         sudo mkdir -p ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
         sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
-        sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/p2/etc/network/interfaces
+		#add config files
+        sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/p2/etc/network/interfaces &&\
+		sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/p2/etc/init.d/ &&\
+		sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/p2/root/ &&\
+		sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
+		sudo chown root ${temp_root_dir}/output/p2/bin/* -R
         echo "--->modules done~"
 
         if [ $? -ne 0 ]
@@ -494,14 +498,10 @@ if [ "${1}" = "build_buildroot" ]; then
 	build_buildroot
 fi
 
-if [ "${1}" = "tf_pack" ]; then
-    pack_tf_normal_size_img
-fi
-
 if [ "${1}" = "build_tf" ]; then
 	cp -f ${temp_root_dir}/linux_tf_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
-	cp -f ${temp_root_dir}/v3s_buildroot_flash \
+	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
 		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	linux_config_file="licheepi_zero_defconfig"
@@ -512,13 +512,14 @@ if [ "${1}" = "build_tf" ]; then
 	pack_tf_normal_size_img
 fi
 
-if [ "${1}" = "pack_flash" ]; then
-        pack_spiflash_normal_size_img
+if [ "${1}" = "pack_tf" ]; then
+    pack_tf_normal_size_img
 fi
 
 if [ "${1}" = "burn_tf" ]; then
 	sudo dd if=${temp_root_dir}/output/image/lichee-zero-normal-size.img of=/dev/sda bs=1M conv=notrunc
 fi
+
 
 if [ "${1}" = "build_flash" ]; then
 	cp -f ${temp_root_dir}/linux_flash_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
@@ -529,7 +530,7 @@ if [ "${1}" = "build_flash" ]; then
 		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
     cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig \
 		${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
-	cp -f ${temp_root_dir}/v3s_buildroot_flash \
+	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
 		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	u_boot_config_file="LicheePi_Zero_defconfig"
@@ -540,6 +541,10 @@ if [ "${1}" = "build_flash" ]; then
 	pack_spiflash_normal_size_img
 
 	echo "the binary file in output/ dir"
+fi
+
+if [ "${1}" = "pack_flash" ]; then
+        pack_spiflash_normal_size_img
 fi
 
 if [ "${1}" = "burn_flash" ]; then
