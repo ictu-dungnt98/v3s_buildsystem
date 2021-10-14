@@ -1,11 +1,14 @@
 #!/bin/bash
 
+#sdcard format
+set -e
+SDCARD=""
+
 echo "Lichee pi Zero (V3S)"
 echo "Welcome to use lichee pi nano sdk"
 toolchain_dir="toolchain"
 cross_compiler="arm-linux-gnueabihf"
 temp_root_dir=$PWD
-
 
 #uboot=========================================================
 u_boot_dir="Lichee-Pi-u-boot"
@@ -517,8 +520,38 @@ if [ "${1}" = "pack_tf" ]; then
     pack_tf_normal_size_img
 fi
 
+umount_all()
+{
+	set +e
+
+	sudo df | grep ${SDCARD}1 2>&1 1>/dev/null
+	if [ $? == 0 ]; then
+		sudo umount ${SDCARD}1
+	fi
+
+	sudo df | grep ${SDCARD}2 2>&1 1>/dev/null
+	if [ $? == 0 ]; then
+		sudo umount ${SDCARD}2
+	fi
+
+	set -e
+}
+
 if [ "${1}" = "burn_tf" ]; then
+	echo "umounting sdcard..."
+	SDCARD="/dev/sda"
+	umount_all
+	echo "deleting all partitions..."
+	sudo wipefs -a -f $SDCARD
+	# TODO  can this really work?
+	sudo dd if=/dev/zero of=$SDCARD bs=1M count=1
+	echo "creating partitions..."
+	sudo fdisk $SDCARD < part.txt
+	echo "formating partitions..."
+	sudo mkfs.ext4 -F ${SDCARD}1
+
 	sudo dd if=${temp_root_dir}/output/image/lichee-zero-normal-size.img of=/dev/sda bs=1M conv=notrunc
+	sudo sync
 fi
 
 
