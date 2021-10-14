@@ -420,6 +420,7 @@ EOT
 		sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/p2/etc/init.d/ &&\
 		sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/p2/root/ &&\
 		sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
+		sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
 		sudo chown root ${temp_root_dir}/output/p2/bin/* -R
         echo "--->modules done~"
 
