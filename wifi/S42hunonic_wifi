@@ -1,0 +1,9 @@
+	#!/bin/sh
+	#############################################
+	# for wifi rtl8723bs
+	# add this file into /etc/init.d/
+	#############################################
+	insmod /lib/modules/4.13.16-licheepi-zero/kernel/drivers/staging/rtl8723bs/r8723bs.ko
+	ifconfig wlan0 up
+	wpa_supplicant -B -d -i wlan0 -c /etc/wpa_supplicant.conf
+	udhcpc -i wlan0

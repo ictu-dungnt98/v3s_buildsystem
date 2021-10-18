@@ -1,7 +1,6 @@
 #!/bin/bash
 
 #sdcard format
-set -e
 SDCARD=""
 
 echo "Lichee pi Zero (V3S)"
@@ -309,7 +308,32 @@ pack_spiflash_normal_size_img(){
 	tar -C ${temp_root_dir}/output/rootfs -xvf ${temp_root_dir}/output/rootfs.tar > /dev/null 2>&1
 	sudo chown root ${temp_root_dir}/output/rootfs/bin/* -R
 	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces
-    sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
+
+	#add config files
+	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces &&\
+	sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/rootfs/root/ &&\
+	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio -R
+	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio
+
+	#add wifi config
+	# if [ ! -d ${temp_root_dir}/output/rootfs/lib/firmware/rtlwifi/ ]; then
+    # 	mkdir -p ${temp_root_dir}/output/rootfs/lib/firmware/rtlwifi/
+	# fi
+	# sudo cp ${temp_root_dir}/wifi/rtl8723bs_nic.bin ${temp_root_dir}/output/rootfs/lib/firmware/rtlwifi/
+
+	# if [ ! -d ${temp_root_dir}/output/rootfs/lib/modules/rtl ]; then
+	# 	mkdir -p ${temp_root_dir}/output/rootfs/lib/modules
+	# fi
+	# echo "cp ${temp_root_dir}/wifi/r8723bs.ko"
+	# sudo cp ${temp_root_dir}/wifi/r8723bs.ko ${temp_root_dir}/output/rootfs/lib/modules/
+	sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
+	sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
+	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
+	#add config wifi
+
+	sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
 
 
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
@@ -370,7 +394,6 @@ pack_tf_normal_size_img(){
 		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1 && exit
 	fi
 	echo  "--->creating partitions for tf image ..."
-	#blockdev --rereadpt $_LOOP_DEV >/dev/null 2>&1
 	# size only can be integer
 	cat <<EOT |sudo  sfdisk $_IMG_FILE
 ${_UBOOT_SIZE}M,${_P1_SIZE}M,c
@@ -385,7 +408,6 @@ EOT
 	then
 		echo  "error in creating partitions"
 		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1 && exit
-		#sudo partprobe $_LOOP_DEV >/dev/null 2>&1 && exit
 	fi
 
 	#pack uboot
@@ -403,6 +425,7 @@ EOT
 	mkdir -p ${temp_root_dir}/output/p2 > /dev/null 2>&1
 	sudo mount ${_LOOP_DEV}p1 ${temp_root_dir}/output/p1
 	sudo mount ${_LOOP_DEV}p2 ${temp_root_dir}/output/p2
+
 	echo  "--->copy boot and rootfs files..."
 	sudo rm -rf  ${temp_root_dir}/output/p1/* && sudo rm -rf ${temp_root_dir}/output/p2/*
 
@@ -410,31 +433,52 @@ EOT
 	_KERNEL_FILE=${temp_root_dir}/output/zImage
 	_DTB_FILE=${temp_root_dir}/output/${dtb_file}
 	sudo cp $_UBOOT_FILE ${temp_root_dir}/output/p1/${uboot_file} &&\
-        sudo cp $_KERNEL_FILE ${temp_root_dir}/output/p1/zImage &&\
-        sudo cp $_DTB_FILE ${temp_root_dir}/output/p1/ &&\
-        sudo cp ${temp_root_dir}/output/boot.scr ${temp_root_dir}/output/p1/ &&\
-        echo "--->p1 done~"
-        sudo tar xzvf $_ROOTFS_FILE -C ${temp_root_dir}/output/p2/ > /dev/null 2>&1  &&\
-        echo "--->p2 done~"
-        sudo mkdir -p ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
-        sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
-		#add config files
-        sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/p2/etc/network/interfaces &&\
-		sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/p2/etc/init.d/ &&\
-		sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/p2/root/ &&\
-		sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
-		sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
-		sudo chown root ${temp_root_dir}/output/p2/bin/* -R
-        echo "--->modules done~"
+	sudo cp $_KERNEL_FILE ${temp_root_dir}/output/p1/zImage &&\
+	sudo cp $_DTB_FILE ${temp_root_dir}/output/p1/ &&\
+	sudo cp ${temp_root_dir}/output/boot.scr ${temp_root_dir}/output/p1/ &&\
+	echo "--->p1 done~"
 
-        if [ $? -ne 0 ]
-        then
-		echo "copy files error! "
-		sudo losetup -d $_LOOP_DEV >/dev/null 2>&1
-		sudo umount ${_LOOP_DEV}p1  ${_LOOP_DEV}p2 >/dev/null 2>&1
-		exit
-        fi
-        echo "--->The tf card image-packing task done~"
+	sudo tar xzvf $_ROOTFS_FILE -C ${temp_root_dir}/output/p2/ > /dev/null 2>&1  &&\
+	echo "--->p2 done~"
+	#kernel module
+	sudo mkdir -p ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
+	sudo cp -r $_MOD_FILE/*  ${temp_root_dir}/output/p2/lib/modules/${_kernel_mod_dir_name}/ &&\
+	echo "--->modules done~"
+
+	#add config files
+	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/p2/etc/network/interfaces &&\
+	sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/p2/root/ &&\
+	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
+	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
+	sudo chown root ${temp_root_dir}/output/p2/bin/* -R
+
+	#add wifi config
+	# if [ ! -d ${temp_root_dir}/output/p2/lib/firmware/rtlwifi/ ]; then
+    # 	mkdir -p ${temp_root_dir}/output/p2/lib/firmware/rtlwifi/
+	# fi
+	# sudo cp ${temp_root_dir}/wifi/rtl8723bs_nic.bin ${temp_root_dir}/output/p2/lib/firmware/rtlwifi/
+
+	# if [ ! -d ${temp_root_dir}/output/p2/lib/modules/rtl ]; then
+	# 	mkdir -p ${temp_root_dir}/output/p2/lib/modules
+	# fi
+	# echo "cp ${temp_root_dir}/wifi/r8723bs.ko"
+	# sudo cp ${temp_root_dir}/wifi/r8723bs.ko ${temp_root_dir}/output/p2/lib/modules/
+	sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
+	sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
+	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
+	#add config wifi
+
+	if [ $? -ne 0 ]
+	then
+	echo "copy files error! "
+	sudo losetup -d $_LOOP_DEV >/dev/null 2>&1
+	sudo umount ${_LOOP_DEV}p1  ${_LOOP_DEV}p2 >/dev/null 2>&1
+	exit
+	fi
+
+	echo "--->The tf card image-packing task done~"
 	sudo sync
 	sleep 2
 	sudo umount ${temp_root_dir}/output/p1 ${temp_root_dir}/output/p2  && sudo losetup -d $_LOOP_DEV
@@ -554,6 +598,23 @@ if [ "${1}" = "burn_tf" ]; then
 	sudo sync
 fi
 
+if [ "${1}" = "create_tf_fel" ]; then
+	echo "umounting sdcard..."
+	SDCARD="/dev/sda"
+	umount_all
+	echo "deleting all partitions..."
+	sudo wipefs -a -f $SDCARD
+	# TODO  can this really work?
+	sudo dd if=/dev/zero of=$SDCARD bs=1M count=1
+	echo "creating partitions..."
+	sudo fdisk $SDCARD < part.txt
+	echo "formating partitions..."
+	sudo mkfs.ext4 -F ${SDCARD}1
+
+	sudo dd if=~/fel-sdboot.sunxi of=/dev/sda bs=1M conv=notrunc
+	sudo sync
+fi
+
 
 if [ "${1}" = "build_flash" ]; then
 	cp -f ${temp_root_dir}/linux_flash_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
@@ -582,11 +643,11 @@ if [ "${1}" = "pack_flash" ]; then
 fi
 
 if [ "${1}" = "burn_flash" ]; then
-	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
+	sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
 	sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
-	sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
-	sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
+	# sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
+	# sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
+	# sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
 
 	# sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/output/flashimg.bin
 fi
