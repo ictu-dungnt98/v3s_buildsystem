@@ -316,17 +316,13 @@ pack_spiflash_normal_size_img(){
 	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio -R
 	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio
 
-	#add wifi config
-	# if [ ! -d ${temp_root_dir}/output/rootfs/lib/firmware/rtlwifi/ ]; then
-    # 	mkdir -p ${temp_root_dir}/output/rootfs/lib/firmware/rtlwifi/
-	# fi
-	# sudo cp ${temp_root_dir}/wifi/rtl8723bs_nic.bin ${temp_root_dir}/output/rootfs/lib/firmware/rtlwifi/
+	#add user app file
+	sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
+			${temp_root_dir}/output/rootfs/root/app
+	sudo chown root ${temp_root_dir}/output/rootfs/root/app -R
+	sudo chmod 777 ${temp_root_dir}/output/rootfs/root/app
 
-	# if [ ! -d ${temp_root_dir}/output/rootfs/lib/modules/rtl ]; then
-	# 	mkdir -p ${temp_root_dir}/output/rootfs/lib/modules
-	# fi
-	# echo "cp ${temp_root_dir}/wifi/r8723bs.ko"
-	# sudo cp ${temp_root_dir}/wifi/r8723bs.ko ${temp_root_dir}/output/rootfs/lib/modules/
+	#add wifi config
 	sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
 	sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
 	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
@@ -453,17 +449,13 @@ EOT
 	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
 	sudo chown root ${temp_root_dir}/output/p2/bin/* -R
 
-	#add wifi config
-	# if [ ! -d ${temp_root_dir}/output/p2/lib/firmware/rtlwifi/ ]; then
-    # 	mkdir -p ${temp_root_dir}/output/p2/lib/firmware/rtlwifi/
-	# fi
-	# sudo cp ${temp_root_dir}/wifi/rtl8723bs_nic.bin ${temp_root_dir}/output/p2/lib/firmware/rtlwifi/
+		#add user app file
+	sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
+			${temp_root_dir}/output/p2/root/app
+	sudo chown root ${temp_root_dir}/output/p2/root/app -R
+	sudo chmod 777 ${temp_root_dir}/output/p2/root/app
 
-	# if [ ! -d ${temp_root_dir}/output/p2/lib/modules/rtl ]; then
-	# 	mkdir -p ${temp_root_dir}/output/p2/lib/modules
-	# fi
-	# echo "cp ${temp_root_dir}/wifi/r8723bs.ko"
-	# sudo cp ${temp_root_dir}/wifi/r8723bs.ko ${temp_root_dir}/output/p2/lib/modules/
+	#add wifi config
 	sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
 	sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
 	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
