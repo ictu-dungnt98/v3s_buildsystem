@@ -311,8 +311,9 @@ pack_spiflash_normal_size_img(){
 
 	#add config files
 	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces &&\
-	sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
-	sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/rootfs/root/ &&\
+    sudo cp ${temp_root_dir}/service_ntp/S43hunonic_ntp ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	sudo cp ${temp_root_dir}/service_audio/S41hunonic_audio ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	sudo cp ${temp_root_dir}/service_audio/file_example_WAV_1MG.wav ${temp_root_dir}/output/rootfs/root/ &&\
 	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio -R
 	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio
 
@@ -323,10 +324,10 @@ pack_spiflash_normal_size_img(){
 	sudo chmod 777 ${temp_root_dir}/output/rootfs/root/app
 
 	#add wifi config
-	sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
-	sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
-	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
-	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
+	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
+	# sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	# sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
+	# sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
 	#add config wifi
 
 	sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
@@ -443,13 +444,15 @@ EOT
 
 	#add config files
 	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/p2/etc/network/interfaces &&\
-	sudo cp ${temp_root_dir}/S41hunonic_audio ${temp_root_dir}/output/p2/etc/init.d/ &&\
-	sudo cp ${temp_root_dir}/file_example_WAV_1MG.wav ${temp_root_dir}/output/p2/root/ &&\
+    sudo cp ${temp_root_dir}/service_ntp/S43hunonic_ntp ${temp_root_dir}/output/p2/etc/init.d/ &&\
+    sudo cp ${temp_root_dir}/service_audio/S41hunonic_audio ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	sudo cp ${temp_root_dir}/service_audio/file_example_WAV_1MG.wav ${temp_root_dir}/output/p2/root/ &&\
+
 	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
 	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S41hunonic_audio -R
 	sudo chown root ${temp_root_dir}/output/p2/bin/* -R
 
-		#add user app file
+    #add user app file
 	sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
 			${temp_root_dir}/output/p2/root/app
 	sudo chown root ${temp_root_dir}/output/p2/root/app -R
@@ -457,7 +460,7 @@ EOT
 
 	#add wifi config
 	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
-	# sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	# sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
 	# sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
 	# sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
 	#add config wifi
@@ -608,7 +611,6 @@ if [ "${1}" = "create_tf_fel" ]; then
 	sudo dd if=~/fel-sdboot.sunxi of=/dev/sda bs=1M conv=notrunc
 	sudo sync
 fi
-
 
 if [ "${1}" = "build_flash" ]; then
 	cp -f ${temp_root_dir}/linux_flash_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
