@@ -456,10 +456,10 @@ EOT
 	sudo chmod 777 ${temp_root_dir}/output/p2/root/app
 
 	#add wifi config
-	sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
-	sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
-	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
-	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
+	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
+	# sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	# sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
+	# sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
 	#add config wifi
 
 	if [ $? -ne 0 ]
@@ -541,6 +541,8 @@ fi
 if [ "${1}" = "build_tf" ]; then
 	cp -f ${temp_root_dir}/linux_tf_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
+    cp -f ${temp_root_dir}/sun8i-v3s.dtsi ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
+
 	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
 		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
@@ -612,6 +614,7 @@ if [ "${1}" = "build_flash" ]; then
 	cp -f ${temp_root_dir}/linux_flash_sun8i.h ${temp_root_dir}/${u_boot_dir}/include/configs/sun8i.h
 	cp -f ${temp_root_dir}/spi-nor.c ${temp_root_dir}/${linux_dir}/drivers/mtd/spi-nor/spi-nor.c
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
+    cp -f ${temp_root_dir}/sun8i-v3s.dtsi ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
 
 	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig \	
 		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
