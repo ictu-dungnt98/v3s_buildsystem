@@ -91,6 +91,16 @@
 	status = "okay";
 };
 
+&mmc1 {
+	status = "okay";
+
+	esp8089: sdio_wifi@1 {
+		compatible = "esp,esp8089";
+		reg = <1>;
+		esp,crystal-26M-en = <2>;
+	};
+};
+
 &i2c0 {
 	status = "okay";
 

@@ -453,10 +453,10 @@ EOT
 	sudo chown root ${temp_root_dir}/output/p2/bin/* -R
 
     #add user app file
-	sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
-			${temp_root_dir}/output/p2/root/app
-	sudo chown root ${temp_root_dir}/output/p2/root/app -R
-	sudo chmod 777 ${temp_root_dir}/output/p2/root/app
+	# sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
+	# 		${temp_root_dir}/output/p2/root/app
+	# sudo chown root ${temp_root_dir}/output/p2/root/app -R
+	# sudo chmod 777 ${temp_root_dir}/output/p2/root/app
 
 	#add wifi config
 	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
