@@ -458,12 +458,12 @@ EOT
 	# sudo chown root ${temp_root_dir}/output/p2/root/app -R
 	# sudo chmod 777 ${temp_root_dir}/output/p2/root/app
 
-	#add wifi config
-	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
-	# sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
-	# sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
-	# sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
-	#add config wifi
+	# add wifi config
+	sudo cp ${temp_root_dir}/service_wifi/esp8089.ko ${temp_root_dir}/output/p2/lib/modules/
+	sudo cp ${temp_root_dir}/service_wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
+	sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
+	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
 
 	if [ $? -ne 0 ]
 	then
@@ -554,7 +554,7 @@ if [ "${1}" = "build_tf" ]; then
 	buildroot_config_file="licheepi_zero_defconfig"
 
 	build
-	pack_tf_normal_size_img
+	# pack_tf_normal_size_img
 fi
 
 if [ "${1}" = "pack_tf" ]; then
