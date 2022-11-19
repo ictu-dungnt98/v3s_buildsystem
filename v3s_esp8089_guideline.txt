@@ -1,0 +1,12 @@
+User guide for use ESP8089 wifi module for V3S Linux system.
+
+1. clone source esp8089:
+git clone https://github.com/al177/esp8089.git
+
+2. clone script build Linux, Uboot, Buildroot for V3S.
+git clone -b support_esp8089 https://github.com/ictu-dungnt98/v3s_buildsystem.git
+
+2. build esp8089.ko file:
+cd ~/esp8089/
+make ARCH=arm CROSS_COMPILE=/home/dungnt98/v3s_buildsystem/toolchain/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- -C /home/dungnt98/v3s_buildsystem/Lichee-Pi-linux/ M=/home/dungnt98/esp8089 modules
+
