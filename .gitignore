@@ -1,5 +1,6 @@
 Lichee-Pi-u-boot/
 Lichee-Pi-linux/
+esp8089/
 buildroot/
 sunxi-tools/
 output/

@@ -1,5 +1,7 @@
 User guide for use ESP8089 wifi module for V3S Linux system.
 
+following to guilde from: https://blog.csdn.net/qq_28877125/article/details/124873263
+
 1. clone source esp8089:
 git clone https://github.com/al177/esp8089.git
 

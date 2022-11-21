@@ -382,6 +382,11 @@
 				pins = "PC0", "PC1", "PC2", "PC3";
 				function = "spi0";
 			};
+
+			// pwm0_pins: pwm0 {
+			// 	pins = "PA5";
+			// 	function = "pwm0";
+			// };
 		};
 
 		timer@01c20c00 {

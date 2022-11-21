@@ -57,25 +57,25 @@
         ethernet0 = &emac;
 	};
 
-	leds {
-		compatible = "gpio-leds";
+	// leds {
+	// 	compatible = "gpio-leds";
 
-		blue_led {
-			label = "licheepi:blue:usr";
-			gpios = <&pio 6 1 GPIO_ACTIVE_LOW>; /* PG1 */
-		};
+	// 	blue_led {
+	// 		label = "licheepi:blue:usr";
+	// 		gpios = <&pio 6 1 GPIO_ACTIVE_LOW>; /* PG1 */
+	// 	};
 
-		green_led {
-			label = "licheepi:green:usr";
-			gpios = <&pio 6 0 GPIO_ACTIVE_LOW>; /* PG0 */
-			default-state = "on";
-		};
+	// 	green_led {
+	// 		label = "licheepi:green:usr";
+	// 		gpios = <&pio 6 0 GPIO_ACTIVE_LOW>; /* PG0 */
+	// 		default-state = "on";
+	// 	};
 
-		red_led {
-			label = "licheepi:red:usr";
-			gpios = <&pio 6 2 GPIO_ACTIVE_LOW>; /* PG2 */
-		};
-	};
+	// 	red_led {
+	// 		label = "licheepi:red:usr";
+	// 		gpios = <&pio 6 2 GPIO_ACTIVE_LOW>; /* PG2 */
+	// 	};
+	// };
 };
 
 &ehci0 {
@@ -93,12 +93,6 @@
 
 &mmc1 {
 	status = "okay";
-
-	esp8089: sdio_wifi@1 {
-		compatible = "esp,esp8089";
-		reg = <1>;
-		esp,crystal-26M-en = <2>;
-	};
 };
 
 &i2c0 {

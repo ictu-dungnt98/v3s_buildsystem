@@ -22,6 +22,8 @@ linux_config_file=""
 # dtb_file="sun8i-v3s-licheepi-zero.dtb"
 dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
 #linux opt=========================================================
+wifi_dir="esp8089"
+wifi_file="esp8089.ko"
 
 #linux opt=========================================================
 buildroot_dir="buildroot"
@@ -48,8 +50,8 @@ pull_linux(){
 	rm -rf ${temp_root_dir}/${linux_dir} &&\
 	mkdir -p ${temp_root_dir}/${linux_dir} &&\
 	cd ${temp_root_dir}/${linux_dir} &&\
-	#git clone -b zero-5.2.y https://github.com/Lichee-Pi/linux.git linux
-    git clone -b zero-4.13.y https://github.com/Lichee-Pi/linux.git linux
+	# git clone -b zero-5.2.y https://github.com/Lichee-Pi/linux.git linux
+    git clone -b zero-4.10.y https://github.com/Lichee-Pi/linux.git linux
 
 	if [ ! -d ${temp_root_dir}/${linux_dir}/linux ]; then
 		echo "Error:pull linux failed"
@@ -60,6 +62,26 @@ pull_linux(){
 		echo "pull linux ok"
 	fi
 }
+
+
+pull_wifi(){
+	rm -rf ${temp_root_dir}/${wifi_dir} &&\
+	mkdir -p ${temp_root_dir}/${wifi_dir} &&\
+	cd ${temp_root_dir}/${wifi_dir} &&\
+    git clone -b cleanup https://github.com/Lichee-Pi/esp8089.git
+
+	if [ ! -d ${temp_root_dir}/${wifi_dir}/esp8089 ]; then
+		echo "Error:pull wifi failed"
+    		exit 0
+	else
+		mv ${temp_root_dir}/${wifi_dir}/esp8089/* ${temp_root_dir}/${wifi_dir}/
+		rm -rf ${temp_root_dir}/${wifi_dir}/esp8089
+		rm ${temp_root_dir}/${wifi_dir}/Makefile
+		cp ${temp_root_dir}/esp8089-Makefile ${temp_root_dir}/${wifi_dir}/Makefile
+		echo "pull wifi ok"
+	fi
+}
+
 
 pull_toolchain(){
 	rm -rf ${temp_root_dir}/${toolchain_dir}
@@ -101,6 +123,7 @@ pull_all(){
 	sudo apt-get install -y libc6:i386 libstdc++6:i386 zlib1g:i386
 	pull_uboot
 	pull_linux
+	pull_wifi
 	pull_toolchain
 	pull_buildroot
 }
@@ -227,6 +250,23 @@ build_linux(){
 }
 #linux=========================================================
 
+
+build_wifi(){
+	echo "Building wifi ..."
+	proc_processor=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
+	echo "--->Compiling ..."
+	cd ${temp_root_dir}/${wifi_dir}
+  	make ARCH=arm CROSS_COMPILE=${cross_compiler}- -j${proc_processor} -C ${temp_root_dir}/${linux_dir} M=${temp_root_dir}/${wifi_dir} modules > ${temp_root_dir}/build_wifi.log 2>&1
+
+	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${wifi_dir}/${wifi_file} ]; then
+        	echo "Error: WIFI NOT BUILD. Please Get Some Error From build_wifi.log"
+        	exit 1
+	fi
+
+	echo "Build wifi ok"
+	cp ${temp_root_dir}/${wifi_dir}/${wifi_file} ${temp_root_dir}/service_wifi/${wifi_file}
+}
+
 #buildroot=========================================================
 clean_buildroot(){
 	cd ${temp_root_dir}/${buildroot_dir}
@@ -293,6 +333,7 @@ build(){
 	build_linux
 	echo "copy linux ..."
 	copy_linux
+	build_wifi
 	build_buildroot
 	echo "copy buildroot ..."
 	copy_buildroot
@@ -331,7 +372,6 @@ pack_spiflash_normal_size_img(){
 	#add config wifi
 
 	sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
-
 
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
     UBOOT_FILE=${temp_root_dir}/output/${uboot_file}	
@@ -459,7 +499,7 @@ EOT
 	# sudo chmod 777 ${temp_root_dir}/output/p2/root/app
 
 	# add wifi config
-	sudo cp ${temp_root_dir}/service_wifi/esp8089.ko ${temp_root_dir}/output/p2/lib/modules/
+	sudo cp ${temp_root_dir}/${wifi_dir}/esp8089.ko ${temp_root_dir}/output/p2/lib/modules/
 	sudo cp ${temp_root_dir}/service_wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
 	sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
 	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
@@ -520,6 +560,10 @@ fi
 
 if [ "${1}" = "pull_linux" ]; then
     pull_linux
+fi
+
+if [ "${1}" = "pull_wifi" ]; then
+    pull_wifi
 fi
 
 if [ "${1}" = "pull_buildroot" ]; then
