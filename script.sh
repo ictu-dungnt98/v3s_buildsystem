@@ -14,49 +14,36 @@ u_boot_dir="Lichee-Pi-u-boot"
 u_boot_config_file=""
 u_boot_boot_cmd_file="boot.cmd"
 uboot_file="u-boot-sunxi-with-spl.bin"
-#uboot=========================================================
-
 #linux opt=========================================================
 linux_dir="Lichee-Pi-linux"
 linux_config_file=""
-# dtb_file="sun8i-v3s-licheepi-zero.dtb"
-dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
-#linux opt=========================================================
-
-#linux opt=========================================================
+dtb_file="sun8i-v3s-licheepi-zero.dtb"
+# dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
+#buildroot opt=========================================================
 buildroot_dir="buildroot"
 buildroot_config_file=""
-#linux opt=========================================================
 
 #pull===================================================================
 pull_uboot(){
 	rm -rf ${temp_root_dir}/${u_boot_dir} &&\
-	mkdir -p ${temp_root_dir}/${u_boot_dir} &&\
-	cd ${temp_root_dir}/${u_boot_dir} &&\
-	git clone -b v3s-spi-experimental https://github.com/Lichee-Pi/u-boot.git
-	if [ ! -d ${temp_root_dir}/${u_boot_dir}/u-boot ]; then
+	git clone -b v3s-spi-experimental https://github.com/Lichee-Pi/u-boot.git ${temp_root_dir}/${u_boot_dir}
+	if [ ! -d ${temp_root_dir}/${u_boot_dir} ]; then
 		echo "Error:pull u_boot failed"
     		exit 0
 	else
-		mv ${temp_root_dir}/${u_boot_dir}/u-boot/* ${temp_root_dir}/${u_boot_dir}/
-		rm -rf ${temp_root_dir}/${u_boot_dir}/u-boot
 		echo "pull u-boot ok"
 	fi
 }
 
 pull_linux(){
 	rm -rf ${temp_root_dir}/${linux_dir} &&\
-	mkdir -p ${temp_root_dir}/${linux_dir} &&\
-	cd ${temp_root_dir}/${linux_dir} &&\
-	#git clone -b zero-5.2.y https://github.com/Lichee-Pi/linux.git linux
-    git clone -b zero-4.13.y https://github.com/Lichee-Pi/linux.git linux
+	#git clone -b zero-5.2.y https://github.com/Lichee-Pi/linux.git ${temp_root_dir}/${linux_dir}
+    git clone -b zero-4.13.y https://github.com/Lichee-Pi/linux.git ${temp_root_dir}/${linux_dir}
 
-	if [ ! -d ${temp_root_dir}/${linux_dir}/linux ]; then
+	if [ ! -d ${temp_root_dir}/${linux_dir} ]; then
 		echo "Error:pull linux failed"
     		exit 0
 	else
-		mv ${temp_root_dir}/${linux_dir}/linux/* ${temp_root_dir}/${linux_dir}/
-		rm -rf ${temp_root_dir}/${linux_dir}/linux
 		echo "pull linux ok"
 	fi
 }
@@ -78,17 +65,13 @@ pull_toolchain(){
 
 pull_buildroot(){
 	sudo rm -rf ${temp_root_dir}/${buildroot_dir}
-	mkdir -p ${temp_root_dir}/${buildroot_dir}
-	cd ${temp_root_dir}/${buildroot_dir}  &&\
 	#wget https://buildroot.org/downloads/buildroot-2017.08.tar.gz && tar -xvf buildroot-2017.08.tar.gz
-    git clone https://github.com/Unturned3/v3s_buildroot.git buildroot
+    git clone https://github.com/Unturned3/v3s_buildroot.git ${temp_root_dir}/${buildroot_dir}
 
     if [ ! -d ${temp_root_dir}/${buildroot_dir} ]; then
 		echo "Error:pull buildroot failed"
     	exit 0
 	else
-		# mv ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3/* ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3
-		# rm -rf ${temp_root_dir}/${buildroot_dir}/buildroot-2021.02.3
 		echo "pull buildroot ok"
 	fi
 }
@@ -234,12 +217,12 @@ clean_buildroot(){
 }
 
 build_buildroot(){
-	cd ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}
+	cd ${temp_root_dir}/${buildroot_dir}
 	echo "Building buildroot ..."
     	echo "--->Configuring ..."
-	rm ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/.config
+	rm ${temp_root_dir}/${buildroot_dir}/.config
 	make ${buildroot_config_file}
-	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/.config ]; then
+	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/.config ]; then
 		echo "Error: .config file not exist"
 		exit 1
 	fi
@@ -249,7 +232,7 @@ build_buildroot(){
 	echo "--->Compiling ..."
   	make -j${proc_processor} > ${temp_root_dir}/build_buildroot.log 2>&1
 
-	if [ $? -ne 0 ] || [ ! -d ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/target ]; then
+	if [ $? -ne 0 ] || [ ! -d ${temp_root_dir}/${buildroot_dir}/output/target ]; then
         	echo "Error: BUILDROOT NOT BUILD.Please Get Some Error From build_buildroot.log"
         	exit 1
 	fi
@@ -268,8 +251,8 @@ copy_linux(){
 	cp -rf ${temp_root_dir}/${linux_dir}/out/lib ${temp_root_dir}/output/modules/
 }
 copy_buildroot(){
-	cp -r ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/target ${temp_root_dir}/output/rootfs/ > /dev/null 2>&1
-	cp ${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/output/images/rootfs.tar ${temp_root_dir}/output/
+	cp -r ${temp_root_dir}/${buildroot_dir}/output/target ${temp_root_dir}/output/rootfs/ > /dev/null 2>&1
+	cp ${temp_root_dir}/${buildroot_dir}/output/images/rootfs.tar ${temp_root_dir}/output/
 	gzip -c ${temp_root_dir}/output/rootfs.tar > ${temp_root_dir}/output/rootfs.tar.gz
 }
 #copy=========================================================
@@ -453,17 +436,16 @@ EOT
 	sudo chown root ${temp_root_dir}/output/p2/bin/* -R
 
     #add user app file
-	sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
-			${temp_root_dir}/output/p2/root/app
-	sudo chown root ${temp_root_dir}/output/p2/root/app -R
-	sudo chmod 777 ${temp_root_dir}/output/p2/root/app
+	# sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
+	# 		${temp_root_dir}/output/p2/root/app
+	# sudo chown root ${temp_root_dir}/output/p2/root/app -R
+	# sudo chmod 777 ${temp_root_dir}/output/p2/root/app
 
 	#add wifi config
-	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
-	# sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
-	# sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
-	# sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
-	#add config wifi
+	sudo cp ${temp_root_dir}/service_wifi/wpa_supplicant.conf ${temp_root_dir}/output/p2/etc/
+	sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/p2/etc/init.d/ &&\
+	sudo chown root ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
+	sudo chmod 777 ${temp_root_dir}/output/p2/etc/init.d/S42hunonic_wifi -R
 
 	if [ $? -ne 0 ]
 	then
@@ -484,6 +466,23 @@ EOT
 	fi
 }
 #pack=========================================================
+
+umount_all()
+{
+	set +e
+
+	sudo df | grep ${SDCARD}1 2>&1 1>/dev/null
+	if [ $? == 0 ]; then
+		sudo umount ${SDCARD}1
+	fi
+
+	sudo df | grep ${SDCARD}2 2>&1 1>/dev/null
+	if [ $? == 0 ]; then
+		sudo umount ${SDCARD}2
+	fi
+
+	set -e
+}
 
 if [ "${1}" = "" ] && [ ! "${1}" = "build_tf" ] && [ ! "${1}" = "build_flash" ] && [ ! "${1}" = "pull_all" ]; then
 	echo "Usage: script.sh [build_flash | build_tf | pull_all | clean]"；
@@ -518,6 +517,10 @@ if [ "${1}" = "pull_all" ]; then
 	pull_all
 fi
 
+if [ "${1}" = "pull_uboot" ]; then
+    pull_uboot
+fi
+
 if [ "${1}" = "pull_linux" ]; then
     pull_linux
 fi
@@ -547,36 +550,19 @@ if [ "${1}" = "build_tf" ]; then
     cp -f ${temp_root_dir}/sun8i-v3s.dtsi ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
 
 	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
-		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
+		${temp_root_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	linux_config_file="licheepi_zero_defconfig"
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	buildroot_config_file="licheepi_zero_defconfig"
 
 	build
-	pack_tf_normal_size_img
+	# pack_tf_normal_size_img
 fi
 
 if [ "${1}" = "pack_tf" ]; then
     pack_tf_normal_size_img
 fi
-
-umount_all()
-{
-	set +e
-
-	sudo df | grep ${SDCARD}1 2>&1 1>/dev/null
-	if [ $? == 0 ]; then
-		sudo umount ${SDCARD}1
-	fi
-
-	sudo df | grep ${SDCARD}2 2>&1 1>/dev/null
-	if [ $? == 0 ]; then
-		sudo umount ${SDCARD}2
-	fi
-
-	set -e
-}
 
 if [ "${1}" = "burn_tf" ]; then
 	echo "umounting sdcard..."
@@ -623,7 +609,7 @@ if [ "${1}" = "build_flash" ]; then
     cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig \
 		${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
 	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
-		${temp_root_dir}/${buildroot_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
+		${temp_root_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	linux_config_file="licheepi_zero_spiflash_defconfig"
