@@ -18,7 +18,6 @@ uboot_file="u-boot-sunxi-with-spl.bin"
 linux_dir="Lichee-Pi-linux"
 linux_config_file=""
 dtb_file="sun8i-v3s-licheepi-zero.dtb"
-# dtb_file="sun8i-v3s-licheepi-zero-dock.dtb"
 #buildroot opt=========================================================
 buildroot_dir="buildroot"
 buildroot_config_file=""
@@ -102,7 +101,6 @@ clean_all(){
 }
 #clean===================================================================
 
-
 #env===================================================================
 update_env(){
 	if [ ! -d ${temp_root_dir}/${toolchain_dir}/gcc-linaro-7.4.1-2019.02-i686_arm-linux-gnueabi ]; then
@@ -126,15 +124,12 @@ check_env(){
 		exit 0
 	fi
 }
-#env===================================================================
 
 #uboot=========================================================
-
 clean_uboot(){
 	cd ${temp_root_dir}/${u_boot_dir}
 	make ARCH=arm CROSS_COMPILE=${cross_compiler}- mrproper > /dev/null 2>&1
 }
-
 
 build_uboot(){
 	cd ${temp_root_dir}/${u_boot_dir}
@@ -170,7 +165,6 @@ build_uboot(){
 	fi
 	echo "Build uboot ok"
 }
-#uboot=========================================================
 
 #linux=========================================================
 clean_linux(){
@@ -208,7 +202,6 @@ build_linux(){
 
 	echo "Build linux ok"
 }
-#linux=========================================================
 
 #buildroot=========================================================
 clean_buildroot(){
@@ -238,7 +231,6 @@ build_buildroot(){
 	fi
 	echo "Build buildroot ok"
 }
-#buildroot=========================================================
 
 #copy=========================================================
 copy_uboot(){
@@ -255,13 +247,10 @@ copy_buildroot(){
 	cp ${temp_root_dir}/${buildroot_dir}/output/images/rootfs.tar ${temp_root_dir}/output/
 	gzip -c ${temp_root_dir}/output/rootfs.tar > ${temp_root_dir}/output/rootfs.tar.gz
 }
-#copy=========================================================
 
-#clean output dir=========================================================
 clean_output_dir(){
 	sudo rm -rf ${temp_root_dir}/output/*
 }
-#clean output dir=========================================================
 
 build(){
 	check_env
@@ -280,7 +269,6 @@ build(){
 	echo "copy buildroot ..."
 	copy_buildroot
 }
-
 
 #pack=========================================================
 pack_spiflash_normal_size_img(){
@@ -301,27 +289,24 @@ pack_spiflash_normal_size_img(){
 	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio
 
 	#add user app file
-	sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
-			${temp_root_dir}/output/rootfs/root/app
-	sudo chown root ${temp_root_dir}/output/rootfs/root/app -R
-	sudo chmod 777 ${temp_root_dir}/output/rootfs/root/app
+	# sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
+	# 		${temp_root_dir}/output/rootfs/root/app
+	# sudo chown root ${temp_root_dir}/output/rootfs/root/app -R
+	# sudo chmod 777 ${temp_root_dir}/output/rootfs/root/app
 
 	#add wifi config
-	# sudo cp ${temp_root_dir}/wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
-	# sudo cp ${temp_root_dir}/wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
-	# sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
-	# sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
-	#add config wifi
+	sudo cp ${temp_root_dir}/service_wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
+	sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
+	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
 
 	sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
 
-
-    OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
+    ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
     UBOOT_FILE=${temp_root_dir}/output/${uboot_file}	
 	DTB_FILE=${temp_root_dir}/output/${dtb_file}
-
 	KERNEL_FILE=${temp_root_dir}/output/zImage
-    ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
+    OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
 
     dd if=/dev/zero 	of=$OUT_FILENAME bs=1M count=16 #flash 16M
     dd if=$UBOOT_FILE 	of=$OUT_FILENAME bs=1K conv=notrunc 
@@ -465,8 +450,8 @@ EOT
 		exit
 	fi
 }
-#pack=========================================================
 
+#=======================MAIN============================
 umount_all()
 {
 	set +e
@@ -581,6 +566,7 @@ if [ "${1}" = "burn_tf" ]; then
 	sudo sync
 fi
 
+############## SUPPORT FLASH ################
 if [ "${1}" = "create_tf_fel" ]; then
 	echo "umounting sdcard..."
 	SDCARD="/dev/sda"
@@ -594,7 +580,11 @@ if [ "${1}" = "create_tf_fel" ]; then
 	echo "formating partitions..."
 	sudo mkfs.ext4 -F ${SDCARD}1
 
-	sudo dd if=~/fel-sdboot.sunxi of=/dev/sda bs=1M conv=notrunc
+	if [ ! -f ${temp_root_dir}/fel-sdboot.sunxi ]; then
+		wget https://github.com/linux-sunxi/sunxi-tools/raw/master/bin/fel-sdboot.sunxi
+	fi
+
+	sudo dd if=./fel-sdboot.sunxi of=/dev/sda bs=1M conv=notrunc
 	sudo sync
 fi
 
@@ -626,12 +616,11 @@ if [ "${1}" = "pack_flash" ]; then
 fi
 
 if [ "${1}" = "burn_flash" ]; then
-	sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
+	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
 	sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	# sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
-	# sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
+	sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
+	sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
 	# sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
-
 	# sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/output/flashimg.bin
 fi
 
