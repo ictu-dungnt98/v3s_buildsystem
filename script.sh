@@ -134,7 +134,7 @@ clean_uboot(){
 build_uboot(){
 	cd ${temp_root_dir}/${u_boot_dir}
 	echo "Building uboot ..."
-    	echo "--->Configuring ..."
+	echo "--->Configuring ..."
 	make ARCH=arm CROSS_COMPILE=${cross_compiler}- ${u_boot_config_file} > /dev/null 2>&1
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${u_boot_dir}/.config ]; then
 		echo "Error: .config file not exist"
@@ -176,7 +176,7 @@ build_linux(){
 	cd ${temp_root_dir}/${linux_dir}
 	echo "Building linux ..."
 	echo "--->Configuring ..."
-	make ARCH=arm CROSS_COMPILE=${cross_compiler}- ${linux_config_file} > /dev/null 2>&1
+	# make ARCH=arm CROSS_COMPILE=${cross_compiler}- ${linux_config_file} > /dev/null 2>&1
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${linux_dir}/.config ]; then
 		echo "Error: .config file not exist"
 		exit 1
@@ -212,7 +212,7 @@ clean_buildroot(){
 build_buildroot(){
 	cd ${temp_root_dir}/${buildroot_dir}
 	echo "Building buildroot ..."
-    	echo "--->Configuring ..."
+	echo "--->Configuring ..."
 	rm ${temp_root_dir}/${buildroot_dir}/.config
 	make ${buildroot_config_file}
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${buildroot_dir}/.config ]; then
@@ -278,15 +278,14 @@ pack_spiflash_normal_size_img(){
 	sudo rm -rf ${temp_root_dir}/output/rootfs && mkdir -p ${temp_root_dir}/output/rootfs
 	tar -C ${temp_root_dir}/output/rootfs -xvf ${temp_root_dir}/output/rootfs.tar > /dev/null 2>&1
 	sudo chown root ${temp_root_dir}/output/rootfs/bin/* -R
-	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces
 
 	#add config files
-	sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces &&\
-    sudo cp ${temp_root_dir}/service_ntp/S43hunonic_ntp ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
-	sudo cp ${temp_root_dir}/service_audio/S41hunonic_audio ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
-	sudo cp ${temp_root_dir}/service_audio/file_example_WAV_1MG.wav ${temp_root_dir}/output/rootfs/root/ &&\
-	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio -R
-	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio
+	# sudo cp ${temp_root_dir}/interfaces ${temp_root_dir}/output/rootfs/etc/network/interfaces &&\
+    # sudo cp ${temp_root_dir}/service_ntp/S43hunonic_ntp ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	# sudo cp ${temp_root_dir}/service_audio/S41hunonic_audio ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	# sudo cp ${temp_root_dir}/service_audio/file_example_WAV_1MG.wav ${temp_root_dir}/output/rootfs/root/ &&\
+	# sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio -R
+	# sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S41hunonic_audio
 
 	#add user app file
 	# sudo cp /home/dungnt98/hunonic_gateway_app/sources/manager/build_manager_service/manager_service \
@@ -295,24 +294,31 @@ pack_spiflash_normal_size_img(){
 	# sudo chmod 777 ${temp_root_dir}/output/rootfs/root/app
 
 	#add wifi config
-	sudo cp ${temp_root_dir}/service_wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
-	sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
-	sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
-	sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
+	# sudo cp ${temp_root_dir}/service_wifi/wpa_supplicant.conf ${temp_root_dir}/output/rootfs/etc/
+	# sudo cp ${temp_root_dir}/service_wifi/S42hunonic_wifi ${temp_root_dir}/output/rootfs/etc/init.d/ &&\
+	# sudo chown root ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi -R
+	# sudo chmod 777 ${temp_root_dir}/output/rootfs/etc/init.d/S42hunonic_wifi
 
-	sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0x1AF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
+	#create jffs2 rootfs file
+	# 5MB: 32M-1M-64K-5M = 0x19F0000
+	# 4MB: 32M-1M-64K-4M = 0x1AF0000
+	sudo mkfs.jffs2 -s 0x100 -e 0x10000 -p 0xAF0000 -d ${temp_root_dir}/output/rootfs/ -o ${temp_root_dir}/output/jffs2.img
 
-    ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
+	#create bootable image file
     UBOOT_FILE=${temp_root_dir}/output/${uboot_file}	
 	DTB_FILE=${temp_root_dir}/output/${dtb_file}
 	KERNEL_FILE=${temp_root_dir}/output/zImage
+    ROOTFS_FILE=${temp_root_dir}/output/jffs2.img
     OUT_FILENAME=${temp_root_dir}/output/flashimg.bin
 
-    dd if=/dev/zero 	of=$OUT_FILENAME bs=1M count=16 #flash 16M
-    dd if=$UBOOT_FILE 	of=$OUT_FILENAME bs=1K conv=notrunc 
-    dd if=$DTB_FILE 	of=$OUT_FILENAME bs=1K seek=1024  conv=notrunc
-	dd if=$KERNEL_FILE 	of=$OUT_FILENAME bs=1K seek=1088  conv=notrunc
-    dd if=$ROOTFS_FILE 	of=$OUT_FILENAME bs=1K seek=5184 conv=notrunc
+	#==========================================
+	# UBOOT(1M) | DTB(64K) | KERNEL(4M) | RFS |
+	#==========================================
+    dd if=/dev/zero 	of=$OUT_FILENAME bs=1M count=16 # flash count MB
+    dd if=$UBOOT_FILE 	of=$OUT_FILENAME bs=1K conv=notrunc # offset 0
+    dd if=$DTB_FILE 	of=$OUT_FILENAME bs=1K seek=1024  conv=notrunc # offset 1M
+	dd if=$KERNEL_FILE 	of=$OUT_FILENAME bs=1K seek=1088  conv=notrunc # offset 1M + 64K
+    dd if=$ROOTFS_FILE 	of=$OUT_FILENAME bs=1K seek=5184  conv=notrunc # offset 1M + 64K + 4M(5184) or 5M(6208)
 
 	echo "done"
     #rm -rf ${temp_root_dir}/output/rootfs ${temp_root_dir}/output/jffs2.img
@@ -594,12 +600,9 @@ if [ "${1}" = "build_flash" ]; then
 	cp -f ${temp_root_dir}/sun8i-v3s-licheepi-zero.dts ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
     cp -f ${temp_root_dir}/sun8i-v3s.dtsi ${temp_root_dir}/${linux_dir}/arch/arm/boot/dts/
 
-	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig \	
-		${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
-    cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig \
-		${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
-	cp -f ${temp_root_dir}/v3s_buildroot_defconfig \
-		${temp_root_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
+	cp -f ${temp_root_dir}/uboot-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${u_boot_dir}/configs/LicheePi_Zero_defconfig
+    cp -f ${temp_root_dir}/linux-licheepi_zero_spiflash_defconfig ${temp_root_dir}/${linux_dir}/arch/arm/configs/licheepi_zero_spiflash_defconfig
+	cp -f ${temp_root_dir}/v3s_buildroot_flash ${temp_root_dir}/${buildroot_dir}/configs/licheepi_zero_defconfig
 
 	u_boot_config_file="LicheePi_Zero_defconfig"
 	linux_config_file="licheepi_zero_spiflash_defconfig"
@@ -612,18 +615,24 @@ if [ "${1}" = "build_flash" ]; then
 fi
 
 if [ "${1}" = "pack_flash" ]; then
-        pack_spiflash_normal_size_img
+	pack_spiflash_normal_size_img
+fi
+
+if [ "${1}" = "erase_flash" ]; then
+    sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
 fi
 
 if [ "${1}" = "burn_flash" ]; then
-	# sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/erase_flash.bin
-	sudo sunxi-fel -p spiflash-write 0x0 	 ${temp_root_dir}/output/u-boot-sunxi-with-spl.bin
-	sudo sunxi-fel -p spiflash-write 0x100000 ${temp_root_dir}/output/${dtb_file}
-	sudo sunxi-fel -p spiflash-write 0x110000 ${temp_root_dir}/output/zImage
-	# sudo sunxi-fel -p spiflash-write 0x510000 ${temp_root_dir}/output/jffs2.img
-	# sudo sunxi-fel -p spiflash-write 0 ${temp_root_dir}/output/flashimg.bin
+	## 4MB: 32M-1M-64K-4M = 0x510000
+	## 5MB: 32M-1M-64K-5M = 0x610000
+	sudo sunxi-fel -p spiflash-write 0x0 ./output/u-boot-sunxi-with-spl.bin
+	sudo sunxi-fel -p spiflash-write 0x100000 ./output/sun8i-v3s-licheepi-zero.dtb
+	sudo sunxi-fel -p spiflash-write 0x110000 ./output/zImage
+	sudo sunxi-fel -p spiflash-write 0x510000 ./output/jffs2.img
+
+	## flash whole single image
+	sudo sunxi-fel -p spiflash-write 0 ./output/flashimg.bin
 fi
 
 sleep 1
 echo "Done!"
-

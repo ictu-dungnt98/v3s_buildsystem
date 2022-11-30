@@ -27,7 +27,7 @@
 	#define CONFIG_SUNXI_USB_PHYS	2
 #endif
 
-#define CONFIG_BOOTCOMMAND   "sf probe 0; "                           \
+ #define CONFIG_BOOTCOMMAND   "sf probe 0; "                           \
                              "sf read 0x41800000 0x100000 0x10000; "  \
                              "sf read 0x41000000 0x110000 0x400000; " \
                              "bootz 0x41000000 - 0x41800000"
