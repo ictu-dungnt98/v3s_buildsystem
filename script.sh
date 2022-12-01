@@ -625,13 +625,13 @@ fi
 if [ "${1}" = "burn_flash" ]; then
 	## 4MB: 32M-1M-64K-4M = 0x510000
 	## 5MB: 32M-1M-64K-5M = 0x610000
-	# sudo sunxi-fel -p spiflash-write 0x0 ./output/u-boot-sunxi-with-spl.bin
-	# sudo sunxi-fel -p spiflash-write 0x100000 ./output/sun8i-v3s-licheepi-zero.dtb
-	# sudo sunxi-fel -p spiflash-write 0x110000 ./output/zImage
+	sudo sunxi-fel -p spiflash-write 0x0 ./output/u-boot-sunxi-with-spl.bin
+	sudo sunxi-fel -p spiflash-write 0x100000 ./output/sun8i-v3s-licheepi-zero.dtb
+	sudo sunxi-fel -p spiflash-write 0x110000 ./output/zImage
 	# sudo sunxi-fel -p spiflash-write 0x510000 ./output/jffs2.img
 
 	## flash whole single image
-	sudo sunxi-fel -p spiflash-write 0 ./output/flashimg.bin
+	# sudo sunxi-fel -p spiflash-write 0 ./output/flashimg.bin
 fi
 
 sleep 1
