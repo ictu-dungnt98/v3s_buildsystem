@@ -176,7 +176,7 @@ build_linux(){
 	cd ${temp_root_dir}/${linux_dir}
 	echo "Building linux ..."
 	echo "--->Configuring ..."
-	# make ARCH=arm CROSS_COMPILE=${cross_compiler}- ${linux_config_file} > /dev/null 2>&1
+	make ARCH=arm CROSS_COMPILE=${cross_compiler}- ${linux_config_file} > /dev/null 2>&1
 	if [ $? -ne 0 ] || [ ! -f ${temp_root_dir}/${linux_dir}/.config ]; then
 		echo "Error: .config file not exist"
 		exit 1
@@ -625,10 +625,10 @@ fi
 if [ "${1}" = "burn_flash" ]; then
 	## 4MB: 32M-1M-64K-4M = 0x510000
 	## 5MB: 32M-1M-64K-5M = 0x610000
-	sudo sunxi-fel -p spiflash-write 0x0 ./output/u-boot-sunxi-with-spl.bin
-	sudo sunxi-fel -p spiflash-write 0x100000 ./output/sun8i-v3s-licheepi-zero.dtb
-	sudo sunxi-fel -p spiflash-write 0x110000 ./output/zImage
-	sudo sunxi-fel -p spiflash-write 0x510000 ./output/jffs2.img
+	# sudo sunxi-fel -p spiflash-write 0x0 ./output/u-boot-sunxi-with-spl.bin
+	# sudo sunxi-fel -p spiflash-write 0x100000 ./output/sun8i-v3s-licheepi-zero.dtb
+	# sudo sunxi-fel -p spiflash-write 0x110000 ./output/zImage
+	# sudo sunxi-fel -p spiflash-write 0x510000 ./output/jffs2.img
 
 	## flash whole single image
 	sudo sunxi-fel -p spiflash-write 0 ./output/flashimg.bin
